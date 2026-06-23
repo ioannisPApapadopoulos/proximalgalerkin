@@ -53,13 +53,13 @@ F += inner(u + exp(-psi) - phi, q)*dx
 
 z_trial = TrialFunction(Z)
 
-beta = Constant(1e-5)
+gamma = Constant(1e-5)
 
 
 u_trial, psi_trial =  split(z_trial)
-J = derivative(F, z, z_trial) #- inner(beta*psi_trial, q)*dx
+J = derivative(F, z, z_trial) #- inner(gamma*psi_trial, q)*dx
 
-Jp = J + inner(1.0/(exp(-psi)+beta)*u_trial,v)*dx - inner(beta*psi_trial, q)*dx
+Jp = J + inner(1.0/(exp(-psi)+gamma)*u_trial,v)*dx - inner(gamma*psi_trial, q)*dx
 
 sp_lu = {"snes_type": "newtonls",
       "snes_monitor": None,
