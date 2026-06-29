@@ -5,9 +5,9 @@ Block preconditioner for proximal Galerkin applied to the obstacle problem.
 
 Top left block is the -D_ij = -(eta_i exp(-psi), eta_j) where eta_i are the
 basis functions for psi. -D is SPD but becomes singular as the 
-algorithm progresses. We handle this by approximating it via a shifted D^gamma
+algorithm progresses. We handle this by approximating it via a shifted D^epsilon
 
-D^gamma = D + gamma (eta_i, eta_j) for user-chosen gamma. This remains invertible.
+D^epsilon = D + epsilon (eta_i, eta_j) for user-chosen epsilon. This remains invertible.
 
 Schur complement is S = A + B.T D.inv B
 
@@ -16,9 +16,9 @@ A = alpha*(grad(v_i), grad(v_j)) is a scaled Laplacian.
 
 We approximate S with the shifted PDE
 
- S^gamma =  -alpha*Lap(u) + 1/(exp(-psi)+ gamma).
+ S^epsilon =  -alpha*Lap(u) + 1/(exp(-psi)+ epsilon).
 
-We invert S^gamma with geometric MG with vertex-star patch relaxation.
+We invert S^epsilon with geometric MG with vertex-star patch relaxation.
 
 
 CG1-CG1 discretization for (u,psi)
@@ -55,13 +55,13 @@ F += inner(u + exp(-psi) - phi, q)*dx
 
 z_trial = TrialFunction(Z)
 
-gamma = Constant(1e-5)
+epsilon = Constant(1e-5)
 
 
 u_trial, psi_trial =  split(z_trial)
-J = derivative(F, z, z_trial) #- inner(gamma*psi_trial, q)*dx
+J = derivative(F, z, z_trial) #- inner(epsilon*psi_trial, q)*dx
 
-Jp = J + inner(1.0/(exp(-psi)+gamma)*u_trial,v)*dx - inner(gamma*psi_trial, q)*dx
+Jp = J + inner(1.0/(exp(-psi)+epsilon)*u_trial,v)*dx - inner(epsilon*psi_trial, q)*dx
 
 sp_mg = {
     "mat_type": "matfree",

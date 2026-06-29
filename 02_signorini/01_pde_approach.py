@@ -86,10 +86,10 @@ F -= inner(dot(obstacle_v(x), Constant((0,-1))), q)*ds_2
 
 
 z_trial = TrialFunction(Z)
-gamma = Constant(1e-5)
+epsilon = Constant(1e-5)
 u_trial, psi_trial =  split(z_trial)
 J = derivative(F, z, z_trial)
-Jp = J + inner(1.0/(exp(-psi)+gamma)*dot(u_trial,n_def),dot(v,n_def))*ds_2 - inner(gamma*psi_trial, q)*ds_2
+Jp = J + inner(1.0/(exp(-psi)+epsilon)*dot(u_trial,n_def),dot(v,n_def))*ds_2 - inner(epsilon*psi_trial, q)*ds_2
 
 
 
