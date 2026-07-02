@@ -3,7 +3,7 @@ from netgen.occ import *
 from collections import defaultdict
 
 
-degree = 4
+degree = 2
 maxh = 0.1
 
 # The disk mesh only has one label for the whole edge.
@@ -30,7 +30,11 @@ ngmesh = geo.GenerateMesh(maxh=maxh)
 
 labels_top = [i+1 for i, name in enumerate(ngmesh.GetRegionNames(codim=1)) if name in ["top"]]
 distribution_parameters = {"overlap_type": (DistributedMeshOverlapType.NONE, 0),}
-base_mesh = Mesh(Mesh(ngmesh).curve_field(degree), distribution_parameters=distribution_parameters)
+
+if degree > 1:
+    base_mesh = Mesh(Mesh(ngmesh).curve_field(degree), distribution_parameters=distribution_parameters)
+else:
+    base_mesh = Mesh(ngmesh, distribution_parameters=distribution_parameters)
 
 nref = 1
 mh = MeshHierarchy(base_mesh, nref)
@@ -67,9 +71,9 @@ mu = Constant(1)
 lmbda = Constant(1)
 
 def epsilon(u):
-    return (grad(u) + grad(u).T) / 2
+    return sym(grad(u))
 def sigma(u):
-    return lmbda*div(u)*Id + 2*mu*epsilon(u)
+    return 2*mu*epsilon(u) + lmbda*div(u)*Id
 def obstacle_v(x):
     circle = as_vector([0, -1+sqrt(1-x**2)])
     # circle = as_vector([0., 0])
@@ -164,12 +168,13 @@ sp_mg = {
         # "ksp_monitor_true_residual": None,
         "ksp_type": "cg",
         "pc_use_amat": False,
-        "pc_type": "python",
-        "pc_python_type": "firedrake.AssembledPC",
-        # "pc_python_type": "firedrake.ASMStarPC",
-        "assembled":{                
-            "pc_type": "python",
-            "pc_python_type": "firedrake.ASMStarPC",}
+        "pc_type": "jacobi"
+        # "pc_type": "python",
+        # "pc_python_type": "firedrake.AssembledPC",
+        # # "pc_python_type": "firedrake.ASMStarPC",
+        # "assembled":{                
+        #     "pc_type": "python",
+        #     "pc_python_type": "firedrake.ASMStarPC",}
         },
     "fieldsplit_1": {
         "ksp_type": "preonly",
@@ -186,10 +191,8 @@ sp_mg = {
             "mg_coarse_mat_mumps_icntl_14": 1000,
             "mg_levels": {
                 "ksp_convergence_test": "skip",
-                "ksp_max_it": 5,
-                "ksp_type": "gmres",
-                "pc_type": "python",
-                "pc_python_type": "firedrake.ASMStarPC",
+                "ksp_max_it": 2,
+                "ksp_type": "chebyshev",
             },
         }
     }
@@ -204,7 +207,7 @@ u, psi = z.subfunctions
 u.rename("Displacement")
 # out.write(u,stress)
 
-Q = TensorFunctionSpace(mesh, "CG", degree-1)
+Q = TensorFunctionSpace(mesh, "DG", degree-1)
 stress = Function(Q)
 stress.rename("Stress")
 
@@ -251,5 +254,6 @@ for i in range(40):
         alpha.assign(sqrt(2)*alpha)
 
 print(f"\nE={E}, nu={nu}, PG Steps: {i}, Newton iterations: {history["newton_its"]}, Avg KSP its: {history["ksp_its"]/history["newton_its"]}, Max KSP its: {history["max_ksp_its"]}")
+
 stress.project(sigma(u))
 out.write(u,stress)
