@@ -195,4 +195,4 @@ for i in range(40):
 
 out.write(u)
 
-print(f"\nPG Steps: {i}, Newton iterations: {history["newton_its"]}, Avg KSP its: {history["ksp_its"]/history["newton_its"]}, Max KSP its: {history["max_ksp_its"]}")
+print(f"\nPG Steps: {i+1}, Newton iterations: {history["newton_its"]}, Avg KSP its: {history["ksp_its"]/history["newton_its"]}, Max KSP its: {history["max_ksp_its"]}")

@@ -24,12 +24,12 @@ We invert S^epsilon with geometric MG with vertex-star patch relaxation.
 CG1-CG1 discretization for (u,psi)
 """
 distribution_parameters = {"overlap_type": (DistributedMeshOverlapType.VERTEX, 1)}
-n = 32
+n = 64
 base = UnitSquareMesh(n, n, distribution_parameters=distribution_parameters)
 mh = MeshHierarchy(base, 1)
 mesh = mh[-1]
 
-degree = 3
+degree = 2
 U = FunctionSpace(mesh, "CG", degree)
 P = FunctionSpace(mesh, "CG", degree)
 Z = MixedFunctionSpace([U, P])
@@ -203,4 +203,4 @@ for i in range(40):
 
 out.write(u)
 
-print(f"\nPG Steps: {i}, Newton iterations: {history["newton_its"]}, Avg KSP its: {history["ksp_its"]/history["newton_its"]}, Max KSP its: {history["max_ksp_its"]}")
+print(f"\nPG Steps: {i+1}, Newton iterations: {history["newton_its"]}, Avg KSP its: {history["ksp_its"]/history["newton_its"]}, Max KSP its: {history["max_ksp_its"]}")

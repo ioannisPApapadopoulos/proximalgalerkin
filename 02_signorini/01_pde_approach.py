@@ -6,32 +6,15 @@ from collections import defaultdict
 degree = 4
 maxh = 0.1
 
-# The disk mesh only has one label for the whole edge.
-# To force a split, I substract a rectangle to make a
-# top and bottom half-disk and reglue them together.
-# This then means that I can label the bottom half of
-# the boundary.
-wp = WorkPlane()
 disk = WorkPlane(Axes((0,0,0), n=Z, h=X)).Circle(1).Face()
-rectangle = wp.Rectangle(2,2).Face()
-top_half_disk = disk-rectangle.Move((-1,-2,0))
-bottom_half_disk = disk-rectangle.Move((-1,0,0))
-point = disk- wp.Rectangle(2,4).Face().Move((-1,-3.005,0))
-
-# Glue the half-disk together, but now the boundary is
-# split into top and bottom half.
-shape = Glue([top_half_disk, bottom_half_disk, point])
-# label bottom part of boundary
-shape.edges.Min(Y).name="bottom"
-shape.edges.Max(Y).name="top"
-
-geo = OCCGeometry(shape, dim=2)
+geo = OCCGeometry(disk, dim=2)
 ngmesh = geo.GenerateMesh(maxh=maxh)
 
-labels_top = [i+1 for i, name in enumerate(ngmesh.GetRegionNames(codim=1)) if name in ["top"]]
-distribution_parameters = {"overlap_type": (DistributedMeshOverlapType.NONE, 0),}
-base_mesh = Mesh(Mesh(ngmesh).curve_field(degree), distribution_parameters=distribution_parameters)
-
+distribution_parameters = {"overlap_type": (DistributedMeshOverlapType.NONE, 1),}
+if degree > 1:
+    base_mesh = Mesh(Mesh(ngmesh).curve_field(degree), distribution_parameters=distribution_parameters)
+else:
+    base_mesh = Mesh(ngmesh, distribution_parameters=distribution_parameters)
 nref = 1
 mh = MeshHierarchy(base_mesh, nref)
 mh_contact = SubmeshHierarchy(mh, subdomain_id="on_boundary")
@@ -67,7 +50,7 @@ mu = Constant(1)
 lmbda = Constant(1)
 
 def epsilon(u):
-    return (grad(u) + grad(u).T) / 2
+    return sym(grad(u))
 def sigma(u):
     return lmbda*div(u)*Id + 2*mu*epsilon(u)
 def obstacle_v(x):
@@ -195,9 +178,42 @@ sp_mg = {
     }
 }
 
-bcs = [DirichletBC(Z.sub(0).sub(0), 0, *labels_top)]
-nvp = NonlinearVariationalProblem(F, z, J=J, Jp=Jp, bcs=bcs)
-nvs = NonlinearVariationalSolver(nvp, solver_parameters=sp_mg)
+
+def free_body_motion(Z, mesh):
+    # (Near) nullspaces due to the fact that
+    # the disk has not been fixed anywhere
+    x, y = SpatialCoordinate(mesh)
+
+    tx = Function(Z)
+    tx_u, _ = tx.subfunctions
+    tx_u.interpolate(Constant((1.0, 0.0)))
+
+    ty = Function(Z)
+    ty_u, _ = ty.subfunctions
+    ty_u.interpolate(Constant((0.0, 1.0)))
+
+    rot = Function(Z)
+    rot_u, _ = rot.subfunctions
+    rot_u.interpolate(as_vector((-y, x)))
+
+    horizontal = VectorSpaceBasis([tx_u])
+    horizontal.orthonormalize()
+
+    rigid_like = VectorSpaceBasis([tx_u, ty_u, rot_u])
+    rigid_like.orthonormalize()
+
+    return (
+        MixedVectorSpaceBasis(Z, [horizontal, Z.sub(1)]),
+        MixedVectorSpaceBasis(Z, [rigid_like, Z.sub(1)]),
+    )
+
+nvp = NonlinearVariationalProblem(F, z, J=J, Jp=Jp)
+exact_nullspace, near_nullspace = free_body_motion(Z, mesh)
+nvs = NonlinearVariationalSolver(nvp, 
+                                    solver_parameters=sp_mg,
+                                    nullspace=exact_nullspace,
+                                    transpose_nullspace=exact_nullspace,
+                                    near_nullspace=near_nullspace)
 
 out = VTKFile("out/Incompressible_bouncy_ball.pvd")
 u, psi = z.subfunctions
@@ -245,11 +261,11 @@ for i in range(40):
     nrm = norm(u-u_old, "H1")
     print(f"PG iteration {i+1}, alpha = {float(alpha):.2e}, Cauchy Error = {nrm:.2e}")
 
-    if nrm < 1e-3:
+    if nrm < 1e-4:
         break
     if float(alpha) < 10:
         alpha.assign(sqrt(2)*alpha)
 
-print(f"\nE={E}, nu={nu}, PG Steps: {i}, Newton iterations: {history["newton_its"]}, Avg KSP its: {history["ksp_its"]/history["newton_its"]}, Max KSP its: {history["max_ksp_its"]}")
+print(f"\nE={E}, nu={nu}, PG Steps: {i+1}, Newton iterations: {history["newton_its"]}, Avg KSP its: {history["ksp_its"]/history["newton_its"]}, Max KSP its: {history["max_ksp_its"]}")
 stress.project(sigma(u))
 out.write(u,stress)

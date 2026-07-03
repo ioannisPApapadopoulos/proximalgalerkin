@@ -24,12 +24,14 @@ We invert S^epsilon with geometric MG with vertex-star patch relaxation.
 CG1-CG1 discretization for (u,psi)
 """
 distribution_parameters = {"overlap_type": (DistributedMeshOverlapType.VERTEX, 2)}
-base = UnitSquareMesh(32, 32, distribution_parameters=distribution_parameters)
+n = 32
+base = UnitSquareMesh(n, n, distribution_parameters=distribution_parameters)
 mh = MeshHierarchy(base, 2)
 mesh = mh[-1]
 
-U = FunctionSpace(mesh, "CG", 1)
-P = FunctionSpace(mesh, "CG", 1)
+degree = 2
+U = FunctionSpace(mesh, "CG", degree)
+P = FunctionSpace(mesh, "CG", degree)
 Z = MixedFunctionSpace([U, P])
 
 z = Function(Z)
@@ -86,7 +88,12 @@ sp_mg = {
         "pc_type": "python",
         "pc_python_type": "firedrake.ASMVankaPC",
         "pc_vanka_construct_dim": 0,
-        "pc_vanka_backend": "tinyasm"
+        "pc_vanka_backend": "tinyasm",
+        # "pc_vanka": {
+        #           "use_coloring": True,
+        #           "sub_sub_pc_type": "lu",
+        #           "sub_sub_pc_factor_mat_solver_type": "mumps",
+        #           "construct_dim": 0,}
     },
     "mg_coarse": {
         "mat_type": "aij",
@@ -133,4 +140,4 @@ for i in range(40):
 
 out.write(u)
 
-print(f"\nPG Steps: {i}, Newton iterations: {history["newton_its"]}, Avg KSP its: {history["ksp_its"]/history["newton_its"]}, Max KSP its: {history["max_ksp_its"]}")
+print(f"\nPG Steps: {i+1}, Newton iterations: {history["newton_its"]}, Avg KSP its: {history["ksp_its"]/history["newton_its"]}, Max KSP its: {history["max_ksp_its"]}")
