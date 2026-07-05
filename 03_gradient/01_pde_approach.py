@@ -1,5 +1,4 @@
 from firedrake import *
-from netgen.occ import *
 from collections import defaultdict
 
 
