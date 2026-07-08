@@ -25,36 +25,42 @@ class ObstacleProblem(ProximalGalerkin):
         F += inner(u + exp(-psi) - Constant(1.0), q) * dx
         return F
 
-    def jacobian(self, z, z_trial):
-        return derivative(self.residual(z), z, z_trial)
-
-    def jacobian_p(self, z, z_test, z_trial):
-        u, psi = split(z)
-        u_trial, psi_trial = split(z_trial)
-        v, q = split(z_test)
-        J = self.jacobian(z, z_trial)
-        eps = Constant(self.epsilon)
-        return J + inner(u_trial / (exp(-psi) + eps), v) * dx - inner(eps * psi_trial, q) * dx
-
     def boundary_conditions(self, Z):
         return DirichletBC(Z.sub(0), 0, "on_boundary")
 
     def update_alpha(self, alpha):
         return 2 * alpha
+    
+    def save_solutions(self, u, psi):
+        out = VTKFile("out/obstacle_pg.pvd")
+        u.rename("u")
+        out.write(u)
 
+
+class OperatorPrecon(ObstacleProblem):
+    def jacobian_p(self, z, z_test, z_trial):
+        u, psi = split(z)
+        u_trial, psi_trial = split(z_trial)
+        v, q = split(z_test)
+        J = self.jacobian(z, z_test, z_trial)
+        eps = Constant(self.epsilon)
+        return J + inner(1.0/(exp(-psi)+eps)*u_trial,v)*dx-inner(eps*psi_trial,q)*dx
 
 if __name__ == "__main__":
-    problem = ObstacleProblem(
+    problem = ObstacleProblem(n=32, alpha0=1e-3)
+    # problem.pg_solve()
+
+    problem = OperatorPrecon(
+        n=32,
         alpha0=1e-3,
         preconditioner="block_cg_jacobi_chebyshev",
         max_pg_steps=40,
         pg_rtol=1e-3,
         alpha_max=30.0,
-        n=32,
         refinements=1,
         degree=1,
         epsilon=1e-5,
-        smoothing_its=2,
+        snes_atol=1e-5
     )
-
-    solve_and_append(problem, "01_obstacle_results.csv")
+    problem.pg_solve()
+    # solve_and_append(problem, "01_obstacle_results.csv")

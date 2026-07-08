@@ -25,23 +25,14 @@ from typing import Iterable, Mapping, MutableMapping, Sequence
 DEFAULT_COLUMNS = (
     "problem",
     "preconditioner",
-    "base_n",
     "n",
-    "mesh",
     "refinements",
     "cells_per_side",
     "degree",
-    "multiplier_degree",
     "epsilon",
-    "eps",
-    "jacobian_eps",
-    "E",
-    "nu",
-    "lambda",
-    "mu",
+    "model_parameter",
     "alpha0",
     "alpha_max",
-    "alpha_factor",
     "pg_rtol",
     "smoothing_its",
     "proximal_steps",
@@ -159,39 +150,27 @@ def problem_metadata(problem) -> dict:
     names = (
         "preconditioner",
         "n",
-        "mesh",
         "refinements",
         "cells_per_side",
         "degree",
-        "multiplier_degree",
         "epsilon",
-        "eps",
-        "jacobian_eps",
-        "E",
-        "nu",
         "alpha0",
         "alpha_max",
-        "alpha_factor",
         "pg_rtol",
         "smoothing_its",
+        "model_parameter"
     )
     metadata = {"problem": problem.__class__.__name__}
     for name in names:
         if hasattr(problem, name):
             metadata[name] = getattr(problem, name)
 
-    if "n" in metadata and "base_n" not in metadata:
-        metadata["base_n"] = metadata["n"]
     if "n" in metadata and "refinements" in metadata and "cells_per_side" not in metadata:
         metadata["cells_per_side"] = metadata["n"] * 2 ** metadata["refinements"]
-    if "E" in metadata and "nu" in metadata:
-        E = metadata["E"]
-        nu = metadata["nu"]
-        metadata.setdefault("lambda", E * nu / ((1 + nu) * (1 - 2 * nu)))
-        metadata.setdefault("mu", E / (2 * (1 + nu)))
-
+    
+    if "model_parameter" not in metadata:
+        metadata["model_parameter"] = None
     return metadata
-
 
 def normalise_row(result: Mapping, extra: Mapping | None = None) -> dict:
     """Return a CSV-safe row from a result dictionary plus optional metadata."""
@@ -205,15 +184,8 @@ def normalise_row(result: Mapping, extra: Mapping | None = None) -> dict:
 
 
 def columns_for(rows: Sequence[Mapping], columns: Sequence[str] | None = None) -> list[str]:
-    """Choose stable CSV columns, preserving extra result keys at the end."""
-    chosen = list(columns or DEFAULT_COLUMNS)
-    seen = set(chosen)
-    for row in rows:
-        for key in row:
-            if key not in seen:
-                chosen.append(key)
-                seen.add(key)
-    return chosen
+    """Choose stable CSV columns."""
+    return list(columns or DEFAULT_COLUMNS)
 
 
 def write_results(path, results: Iterable[Mapping], columns: Sequence[str] | None = None) -> None:

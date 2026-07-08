@@ -5,16 +5,19 @@ import time
 class ProximalGalerkin(object):
 
     def __init__(self,
-                alpha0,
-                preconditioner,
-                max_pg_steps,
-                pg_rtol,
-                alpha_max,
                 n,
-                refinements,
-                degree,
-                epsilon,
+                preconditioner="lu",
+                alpha0=1.0,
+                max_pg_steps=40,
+                pg_rtol=1e-3,
+                alpha_max=1e2,
+                epsilon=0,
+                degree=1,
+                refinements=1,
                 smoothing_its=2,
+                model_parameter=None,
+                snes_atol=1e-6,
+                save_pvd=False,
                 ):
         self.alpha0 = alpha0
         self.preconditioner = preconditioner
@@ -26,6 +29,9 @@ class ProximalGalerkin(object):
         self.degree = degree
         self.epsilon = epsilon
         self.smoothing_its = smoothing_its
+        self.model_parameter=model_parameter
+        self.snes_atol=snes_atol
+        self.save_pvd = save_pvd
 
     def mesh(self):
         raise NotImplementedError
@@ -36,9 +42,9 @@ class ProximalGalerkin(object):
     def residual(self, z):
         raise NotImplementedError
 
-    def jacobian(self, z, z_test):
-        raise None
-    
+    def jacobian(self, z, z_test, z_trial):
+        return derivative(self.residual(z), z, z_trial)
+
     def jacobian_p(self, z, z_test, z_trial):
         return None
     
@@ -52,11 +58,13 @@ class ProximalGalerkin(object):
         preconditioner = self.preconditioner
         if preconditioner in BLOCK_VARIANTS:
             variant = BLOCK_VARIANTS[preconditioner]
-            return block_parameters(variant["top_left"], variant["bottom"], self.smoothing_its)
+            return block_parameters(variant["top_left"], variant["bottom"], self.smoothing_its, self.snes_atol)
         if preconditioner == "monolithic_vanka":
-            return monolithic_vanka_parameters(self.smoothing_its)
+            return monolithic_vanka_parameters(self.smoothing_its, self.snes_atol)
         if preconditioner == "lu":
-            return lu_parameters()
+            return lu_parameters(self.snes_atol)
+        if preconditioner == "block_lu":
+            return block_lu_parameters(self.snes_atol)
         raise ValueError(f"Unknown preconditioner {preconditioner!r}")
 
     def update_alpha(self):
@@ -81,7 +89,7 @@ class ProximalGalerkin(object):
         self._alpha = alpha
 
         F = self.residual(z)
-        J = self.jacobian(z, z_trial)
+        J = self.jacobian(z, z_test, z_trial)
         Jp = self.jacobian_p(z, z_test, z_trial)
         bcs = self.boundary_conditions(Z)
 
@@ -94,6 +102,9 @@ class ProximalGalerkin(object):
             nullspace=nsp, transpose_nullspace=t_nsp, near_nullspace=n_nsp)
 
         return nvs, z, u_old, psi_old, alpha
+
+    def save_solutions(self):
+        return None
 
     def pg_solve(self):
 
@@ -130,6 +141,10 @@ class ProximalGalerkin(object):
 
         elapsed = time.perf_counter() - start
         print(f"\nPG Steps: {proximal_step}, Newton iterations: {newton_steps}, Avg KSP its: {outer_iterations/newton_steps}")
+        
+        if self.save_pvd:
+            self.save_solutions(u, psi)
+
         return {
             "preconditioner": self.preconditioner,
             "mesh": self.n,
@@ -146,4 +161,7 @@ class ProximalGalerkin(object):
             "final_cauchy_error": float(final_error),
             "elapsed_seconds": elapsed,
             "converged_pg": bool(final_error < self.pg_rtol),
+            "model_parameter": self.model_parameter
         }
+
+
