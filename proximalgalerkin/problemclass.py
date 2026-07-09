@@ -1,5 +1,6 @@
 from firedrake import *
 from .solver_options import *
+from .logging import *
 import time
 
 class ProximalGalerkin(object):
@@ -125,7 +126,7 @@ class ProximalGalerkin(object):
 
             newton_steps += step_newton
             outer_iterations += step_outer
-            print(
+            info_g(
                 f"PG iteration {proximal_step}, alpha = {float(alpha):.2e}, "
                 f"Cauchy Error = {final_error:.2e}",
                 flush=True,
@@ -140,7 +141,7 @@ class ProximalGalerkin(object):
                 alpha.assign(self.update_alpha(alpha))
 
         elapsed = time.perf_counter() - start
-        print(f"\nPG Steps: {proximal_step}, Newton iterations: {newton_steps}, Avg KSP its: {outer_iterations/newton_steps}")
+        info_r(f"\nPG Steps: {proximal_step}, Newton iterations: {newton_steps}, Avg KSP its: {outer_iterations/newton_steps}")
         
         if self.save_pvd:
             self.save_solutions(u, psi)

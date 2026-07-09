@@ -14,7 +14,7 @@ def lu_parameters(atol):
     sp_lu = {"snes_type": "newtonls",
         "snes_monitor": None,
         "ksp_type": "preonly",
-        "ksp_monitor": None,
+        # "ksp_monitor": None,
         "pc_type": "lu",
         "pc_factor_mat_solver_type": "mumps",
         "snes_atol": atol,
