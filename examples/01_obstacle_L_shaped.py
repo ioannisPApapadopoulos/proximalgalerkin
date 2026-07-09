@@ -17,7 +17,7 @@ class ObstacleProblem(ProximalGalerkin):
         (x, y) = SpatialCoordinate(base_mesh)
         r_squared = (x - 1)**2 + (y - 1)**2
 
-        for r in [0.3,0.1]:
+        for r in [0.1,0.05]:
             should_refine = conditional(lt(r_squared, r), 1, 0)
             DG0 = FunctionSpace(base_mesh, "DG", 0)
             markers = Function(DG0)

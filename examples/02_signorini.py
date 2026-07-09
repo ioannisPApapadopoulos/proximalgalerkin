@@ -12,7 +12,7 @@ class SignoriniProblem(ProximalGalerkin):
         geo = OCCGeometry(disk, dim=2)
         ngmesh = geo.GenerateMesh(maxh=maxh)
         degree = self.degree
-        distribution_parameters = {"overlap_type": (DistributedMeshOverlapType.NONE, 1),}
+        distribution_parameters = {"overlap_type": (DistributedMeshOverlapType.VERTEX, 1),}
         if degree > 1:
             base_mesh = Mesh(Mesh(ngmesh).curve_field(degree), distribution_parameters=distribution_parameters)
         else:

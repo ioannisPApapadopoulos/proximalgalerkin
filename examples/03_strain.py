@@ -7,7 +7,8 @@ class StrainProblem(ProximalGalerkin):
 
     def mesh(self):
         n = self.n
-        base_mesh = RectangleMesh(10*n, n, 1, 0.1)
+        distribution_parameters = {"overlap_type": (DistributedMeshOverlapType.VERTEX, 1),}
+        base_mesh = RectangleMesh(10*n, n, 1, 0.1, distribution_parameters=distribution_parameters)
         mh = MeshHierarchy(base_mesh, self.refinements)
         mesh = mh[-1]
         self.mesh = mesh
@@ -92,19 +93,38 @@ class OperatorPrecon(StrainProblem):
         Jp = J + self.inverse_dR(psi,self.phi,eps,self.symgrad(u_trial),self.symgrad(v))*dx(degree=10*self.degree) - inner(eps*psi_trial, q)*dx
         return Jp
 
+class LmbdaRobust(OperatorPrecon):
+    def function_space(self, mesh):
+        degree = self.degree
+        V = VectorFunctionSpace(mesh, "CG", degree)
+        W = TensorFunctionSpace(mesh, "DG", degree-1)
+        return V*W
 
 if __name__ == "__main__":
     problem = StrainProblem(n=10, alpha0=1e-2, model_parameter=20.0, save_pvd=True)
     # problem.pg_solve()
 
-    problem = OperatorPrecon(
-        n=20,
+    # problem = OperatorPrecon(
+    #     n=20,
+    #     alpha0=1e-2,
+    #     model_parameter=300.0,
+    #     preconditioner="block_lu",
+    #     max_pg_steps=40,
+    #     refinements=1,
+    #     degree=2,
+    #     epsilon=1e-4,
+    #     save_pvd=True,
+    #     snes_atol=1e-7,
+    # )
+
+    problem = LmbdaRobust(
+        n=10,
         alpha0=1e-2,
         model_parameter=300.0,
-        preconditioner="block_lu",
+        preconditioner="block_cg_jacobi_chebyshev",
         max_pg_steps=40,
         refinements=1,
-        degree=2,
+        degree=4,
         epsilon=1e-4,
         save_pvd=True,
         snes_atol=1e-7,
