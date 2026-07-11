@@ -22,6 +22,19 @@ from pathlib import Path
 from typing import Iterable, Mapping, MutableMapping, Sequence
 
 
+def mpi_rank() -> int:
+    """Return the MPI rank without making this module depend on Firedrake."""
+    try:
+        from mpi4py import MPI
+    except ImportError:
+        return 0
+    return MPI.COMM_WORLD.Get_rank()
+
+
+def is_root_process() -> bool:
+    return mpi_rank() == 0
+
+
 DEFAULT_COLUMNS = (
     "problem",
     "preconditioner",
@@ -106,7 +119,7 @@ def parse_inner_cg_stats(output: str) -> dict:
 
 def parse_outer_fgmres_stats(output: str) -> dict:
     reason_re = re.compile(
-        r"Linear (?!.*fieldsplit).* solve "
+        r"Linear (?![^\n]*fieldsplit)(?:[^\n]*? )?solve "
         r"(?:converged|diverged) due to [A-Z_]+ iterations (\d+)"
     )
     counts = [int(match.group(1)) for match in reason_re.finditer(output)]
@@ -190,6 +203,9 @@ def columns_for(rows: Sequence[Mapping], columns: Sequence[str] | None = None) -
 
 def write_results(path, results: Iterable[Mapping], columns: Sequence[str] | None = None) -> None:
     """Write all result rows to ``path``, replacing any existing file."""
+    if not is_root_process():
+        return
+
     rows = [normalise_row(result) for result in results]
     fieldnames = columns_for(rows, columns)
     output = Path(path)
@@ -203,6 +219,9 @@ def write_results(path, results: Iterable[Mapping], columns: Sequence[str] | Non
 
 def append_result(path, result: Mapping, columns: Sequence[str] | None = None) -> None:
     """Append one result row to ``path``, creating a header if needed."""
+    if not is_root_process():
+        return
+
     row = normalise_row(result)
     output = Path(path)
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -229,8 +248,16 @@ def solve_and_append(problem, path, extra: Mapping | None = None, columns: Seque
     if log_path is None:
         log_path = Path("logs") / (Path(path).stem + ".log")
 
-    with tee_process_output(log_path):
+    if is_root_process():
+        output_context = tee_process_output(log_path)
+    else:
+        output_context = contextlib.nullcontext()
+
+    with output_context:
         result.update(problem.pg_solve())
+
+    if not is_root_process():
+        return result
 
     add_cg_stats_from_log(result, log_path)
     if extra:

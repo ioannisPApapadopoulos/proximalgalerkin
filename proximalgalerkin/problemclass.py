@@ -141,7 +141,7 @@ class ProximalGalerkin(object):
                 alpha.assign(self.update_alpha(alpha))
 
         elapsed = time.perf_counter() - start
-        info_r(f"\nPG Steps: {proximal_step}, Newton iterations: {newton_steps}, Avg KSP its: {outer_iterations/newton_steps}")
+        info_r(f"PG Steps: {proximal_step}, Newton iterations: {newton_steps}, Avg KSP its: {outer_iterations/newton_steps}\n")
         
         if self.save_pvd:
             self.save_solutions(u, psi)

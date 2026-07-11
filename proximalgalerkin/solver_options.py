@@ -67,7 +67,7 @@ def block_lu_parameters(atol):
     }
     return sp_krylov
 
-def top_left_parameters(kind):
+def top_left_parameters(kind, atol):
     options = {
         "jacobi": {
             "ksp_type": "preonly",
@@ -88,6 +88,8 @@ def top_left_parameters(kind):
         },
         "cg_jacobi": {
             "ksp_type": "cg",
+            # "ksp_atol": atol/1e2,
+            # "ksp_rtol": 0,
             "ksp_converged_reason": None,
             "pc_use_amat": False,
             "pc_type": "jacobi",
@@ -139,6 +141,7 @@ def bottom_mg_levels(kind, smoothing_its):
             "ksp_convergence_test": "skip",
             "ksp_max_it": smoothing_its,
             "ksp_type": "chebyshev",
+            "pc_type": "jacobi"
         },
     }
     return options[kind]
@@ -154,15 +157,16 @@ def block_parameters(top_left, bottom, smoothing_its, atol):
         "ksp_monitor": None,
         "ksp_converged_reason": None,
         "ksp_max_it": 200,
-        "ksp_atol": atol/10,
-        "ksp_rtol": atol/10,
+        "ksp_atol": atol/1e1,
+        "ksp_rtol": atol/1e1,
+        "pc_use_amat": False,
         "pc_type": "fieldsplit",
         "pc_fieldsplit_type": "schur",
         "pc_fieldsplit_schur_factorization_type": "full",
         "pc_fieldsplit_0_fields": "1",
         "pc_fieldsplit_1_fields": "0",
-        "fieldsplit_ksp_type": "preonly",
-        "fieldsplit_0": top_left_parameters(top_left),
+        # "fieldsplit_ksp_type": "preonly",
+        "fieldsplit_0": top_left_parameters(top_left, atol),
         "fieldsplit_1": {
             "ksp_type": "preonly",
             "pc_use_amat": False,
