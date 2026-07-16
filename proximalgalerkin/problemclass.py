@@ -70,6 +70,9 @@ class ProximalGalerkin(object):
 
     def update_alpha(self):
         raise NotImplementedError
+    
+    def transfer_manager(self):
+        return None
 
     def pg_setup(self):
         mesh = self.mesh()
@@ -98,9 +101,14 @@ class ProximalGalerkin(object):
 
         nvp = NonlinearVariationalProblem(F, z, J=J, Jp=Jp, bcs=bcs)
         sp = self.solver_parameters()
+        tm = self.transfer_manager()
+
         nvs = NonlinearVariationalSolver(
             nvp, solver_parameters=sp, 
             nullspace=nsp, transpose_nullspace=t_nsp, near_nullspace=n_nsp)
+
+        if tm is not None:
+            nvs.set_transfer_manager(tm)
 
         return nvs, z, u_old, psi_old, alpha
 
