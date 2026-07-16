@@ -62,7 +62,7 @@ class SignoriniProblem(ProximalGalerkin):
 
         mu = Constant(5)
         self.mu = mu
-    
+
         F = inner(alpha*self.sigma(u), self.symgrad(v))*dx_1
         F -= inner(alpha*Constant((0,-1)), v)*dx_1
         F += inner(psi-psi_old, dot(v, n_def))*ds_2
@@ -75,7 +75,7 @@ class SignoriniProblem(ProximalGalerkin):
 
     def update_alpha(self, alpha):
         return 2 * alpha
-    
+
     def free_body_motion(self, Z, mesh):
         # (Near) nullspaces due to the fact that
         # the disk has not been fixed anywhere
@@ -103,7 +103,7 @@ class SignoriniProblem(ProximalGalerkin):
             MixedVectorSpaceBasis(Z, [horizontal, Z.sub(1)]),
             MixedVectorSpaceBasis(Z, [rigid_like, Z.sub(1)]),
         )
-    
+
     def nullspace(self, Z):
         exact_nullspace, near_nullspace = self.free_body_motion(Z, self.mesh)
         return (exact_nullspace, exact_nullspace, near_nullspace)
@@ -135,7 +135,7 @@ class Alfeld(OperatorPrecon):
         return V*W
 
     def transfer_manager(self):
-        return CoarsePatchTransferManager
+        return CoarsePatchTransferManager()
 
 if __name__ == "__main__":
 
