@@ -128,29 +128,23 @@ class OperatorPrecon(SignoriniProblem):
         n_def = self.n_def
         return J + inner(1.0/(exp(-psi)+eps)*dot(u_trial,n_def),dot(v,n_def))*ds_2 - inner(eps*psi_trial, q)*ds_2
 
-class Alfeld(OperatorPrecon):
-    def function_space(self, mesh):
-        V = VectorFunctionSpace(mesh, "CG", self.degree, variant="alfeld")
-        W = FunctionSpace(self.contact_boundary, "CG", self.degree)
-        return V*W
-
-    def transfer_manager(self):
-        return CoarsePatchTransferManager
 
 if __name__ == "__main__":
+    problem = SignoriniProblem(n=20, alpha0=1e0, model_parameter=20.0, save_pvd=True)
+    problem.pg_solve()
 
-
-    problem = Alfeld(
-        n=10,
+    problem = OperatorPrecon(
+        n=20,
         alpha0=1e0,
         model_parameter=20.0,
-        preconditioner="block_cg_jacobi_star",
+        preconditioner="block_lu",
         max_pg_steps=40,
         pg_rtol=1e-3,
         alpha_max=1e2,
         refinements=2,
-        degree=2,
+        degree=1,
         epsilon=1e-5,
         save_pvd=True,
     )
     problem.pg_solve()
+    # solve_and_append(problem, "02_signorini_results.csv")

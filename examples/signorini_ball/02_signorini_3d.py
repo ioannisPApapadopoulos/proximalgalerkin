@@ -9,24 +9,26 @@ class SignoriniProblem(ProximalGalerkin):
     def mesh(self):
         maxh = 1.0/self.n
         sphere = Sphere(Pnt(0,0,0), 1.0)
-        box = Box(Pnt(-0.05,-0.05,-1.001), Pnt(0.05,0.05,-0.99))
-        shape = Glue([sphere, box])
-        shape.faces.Min(Z).name="south"
+        # box = Box(Pnt(-0.05,-0.05,-1.), Pnt(0.05,0.05,-0.99))
+        # shape = Glue([sphere, box])
+        # shape.faces.Min(Z).name="south"
+        shape = sphere
         geo = OCCGeometry(shape, dim=3)
 
         ngmesh = geo.GenerateMesh(maxh=maxh)
-        degree = self.degree
+        # degree = self.degree
         distribution_parameters = {"overlap_type": (DistributedMeshOverlapType.VERTEX, 1),}
-        if degree > 1:
-            base_mesh = Mesh(Mesh(ngmesh).curve_field(degree), distribution_parameters=distribution_parameters)
-        else:
-            base_mesh = Mesh(ngmesh, distribution_parameters=distribution_parameters)
+        # if degree > 1:
+        #     base_mesh = Mesh(Mesh(ngmesh).curve_field(degree), distribution_parameters=distribution_parameters)
+        # else:
+        base_mesh = Mesh(ngmesh, distribution_parameters=distribution_parameters)
         mh = MeshHierarchy(base_mesh, self.refinements)
         mh_contact = SubmeshHierarchy(mh, subdomain_id="on_boundary")
         mesh = mh[-1]
-        self.bc_label = [i+1 for i, name in enumerate(ngmesh.GetRegionNames(codim=1)) if name in ["south"]]
+        # self.bc_label = [i+1 for i, name in enumerate(ngmesh.GetRegionNames(codim=1)) if name in ["south"]]
         self.mesh = mesh
         self.contact_boundary = mh_contact[-1]
+        # import ipdb; ipdb.set_trace()
         return mesh
 
     def function_space(self, mesh):
@@ -76,10 +78,11 @@ class SignoriniProblem(ProximalGalerkin):
         return F
 
     def boundary_conditions(self, Z):
-        return DirichletBC(Z.sub(0), 0, [self.bc_label])
+        return None
+        # return DirichletBC(Z.sub(0), 0, [self.bc_label])
 
     def update_alpha(self, alpha):
-        return 2  * alpha
+        return sqrt(2)  * alpha
 
     def save_solutions(self, u, psi):
         out = VTKFile("out/Signorini_3D.pvd")
@@ -97,6 +100,34 @@ class SignoriniProblem(ProximalGalerkin):
         ds_2 = self.ds_2
         return derivative(self.residual(z), z, z_trial) - inner(eps*psi_trial, q)*ds_2
 
+
+
+    def free_body_motion(self, Z, mesh):
+        # (Near) nullspaces due to the fact that
+        # the body has not been fixed anywhere
+        x, y, z = SpatialCoordinate(mesh)
+
+        tx = Function(Z)
+        tx_u, _ = tx.subfunctions
+        tx_u.interpolate(Constant((1.0, 0.0, 0.0)))
+
+        ty = Function(Z)
+        ty_u, _ = ty.subfunctions
+        ty_u.interpolate(Constant((0.0, 1.0, 0.0)))
+
+        rotz = Function(Z)
+        rotz_u, _ = rotz.subfunctions
+        rotz_u.interpolate(as_vector((-y, x, 0.0)))   # rotation about z-axis
+
+        free_modes = VectorSpaceBasis([tx_u, ty_u, rotz_u])
+        free_modes.orthonormalize()
+
+        return MixedVectorSpaceBasis(Z, [free_modes, Z.sub(1)])
+    
+    def nullspace(self, Z):
+        exact_nullspace = self.free_body_motion(Z, self.mesh)
+        return (exact_nullspace, None, None)
+
 class OperatorPrecon(SignoriniProblem):
     def jacobian_p(self, z, z_test, z_trial):
         u, psi = split(z)
@@ -112,26 +143,26 @@ class OperatorPrecon(SignoriniProblem):
 class IncomRobust(OperatorPrecon):
     def function_space(self, mesh):
         V = FunctionSpace(mesh, "MTW", self.degree)
-        W = FunctionSpace(self.contact_boundary, "DG", self.degree)
+        W = FunctionSpace(self.contact_boundary, "DG", self.degree-1)
         return V*W
 
 if __name__ == "__main__":
     # problem = SignoriniProblem(n=10, alpha0=1e-2, alpha_max=1e1, snes_atol=1e-5, model_parameter=20.0, save_pvd=True)
     # problem.pg_solve()
 
-    problem = OperatorPrecon(
+    problem = IncomRobust(
         n=5,
-        alpha0=1e-2,
-        alpha_max=1e0,
+        alpha0=1e-1,
+        alpha_max=1e1,
         snes_atol=1e-5,
-        model_parameter=1e3,
+        model_parameter=1e1,
         smoothing_its=5,
-        preconditioner="block_cg_jacobi_chebyshev",
+        preconditioner="block_lu",
         max_pg_steps=40,
         pg_rtol=1e-3,
         refinements=1,
-        degree=2,
-        epsilon=1e-5,
+        degree=1,
+        epsilon=1e-4,
         save_pvd=True,
     )
     problem.pg_solve()
