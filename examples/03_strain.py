@@ -40,7 +40,7 @@ class StrainProblem(ProximalGalerkin):
         self.phi = phi
         Id = Identity(2)
         self.Id = Id
-        mu = Constant(71.42857142857143)
+        mu = Constant(70)
         self.mu = mu
 
         degree = self.degree

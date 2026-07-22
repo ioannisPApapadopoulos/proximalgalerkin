@@ -4,8 +4,10 @@ BLOCK_VARIANTS = {
     "block_cg_bjacobi_star": {"top_left": "cg_bjacobi", "bottom": "star"},
     "block_cg_jacobi_star": {"top_left": "cg_jacobi", "bottom": "star"},
     "block_star_star": {"top_left": "star", "bottom": "star"},
-    "block_cg_bjacobi_chebyshev": {"top_left": "cg_bjacobi", "bottom": "chebyshev"},
-    "block_cg_jacobi_chebyshev": {"top_left": "cg_jacobi", "bottom": "chebyshev"},
+    "block_cg_bjacobi_chebyshev_jacobi": {"top_left": "cg_bjacobi", "bottom": "chebyshev_jacobi"},
+    "block_cg_jacobi_chebyshev_jacobi": {"top_left": "cg_jacobi", "bottom": "chebyshev_jacobi"},
+    "block_cg_bjacobi_chebyshev_bjacobi": {"top_left": "cg_bjacobi", "bottom": "chebyshev_bjacobi"},
+    "block_cg_jacobi_chebyshev_bjacobi": {"top_left": "cg_jacobi", "bottom": "chebyshev_bjacobi"},
 }
 
 MONOLITHIC_SOLVERS = {"monolithic_vanka"}
@@ -137,11 +139,17 @@ def bottom_mg_levels(kind, smoothing_its):
             "pc_type": "python",
             "pc_python_type": "firedrake.ASMStarPC",
         },
-        "chebyshev": {
+        "chebyshev_jacobi": {
             "ksp_convergence_test": "skip",
             "ksp_max_it": smoothing_its,
             "ksp_type": "chebyshev",
             "pc_type": "jacobi"
+        },
+        "chebyshev_bjacobi": {
+            "ksp_convergence_test": "skip",
+            "ksp_max_it": smoothing_its,
+            "ksp_type": "chebyshev",
+            "pc_type": "bjacobi"
         },
     }
     return options[kind]
@@ -188,10 +196,12 @@ def block_parameters(top_left, bottom, smoothing_its, atol):
 
 def monolithic_vanka_parameters(smoothing_its,atol):
     return {
-        "mat_type": "nest",
+        "mat_type": "aij",
+        "snes_monitor": None,
         "snes_stol": 0,
         "snes_atol": atol,
         "ksp_type": "fgmres",
+        "ksp_monitor": None,
         "ksp_converged_reason": None,
         "ksp_max_it": 200,
         "ksp_atol": atol/10,

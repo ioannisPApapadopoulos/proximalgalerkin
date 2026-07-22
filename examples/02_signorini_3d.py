@@ -113,9 +113,17 @@ class MTW(OperatorPrecon):
         W = FunctionSpace(self.contact_boundary, "DG", self.degree-1)
         return V*W
 
+class Alfeld(OperatorPrecon):
+    def function_space(self, mesh):
+        V = VectorFunctionSpace(mesh, "CG", self.degree, variant="alfeld")
+        W = FunctionSpace(self.contact_boundary, "CG", self.degree)
+        return V*W
+    def transfer_manager(self):
+        return CoarsePatchTransferManager()
+
 if __name__ == "__main__":
-    problem = SignoriniProblem(n=5, alpha0=1e-2, alpha_max=1e1, snes_atol=1e-5, model_parameter=20.0, save_pvd=True)
-    problem.pg_solve()
+    # problem = SignoriniProblem(n=5, alpha0=1e-2, alpha_max=1e1, snes_atol=1e-5, model_parameter=20.0, save_pvd=True)
+    # problem.pg_solve()
 
     problem =OperatorPrecon(
         n=5,
@@ -124,11 +132,29 @@ if __name__ == "__main__":
         snes_atol=1e-5,
         model_parameter=1e1,
         smoothing_its=5,
-        preconditioner="block_lu",
+        preconditioner="block_cg_jacobi_star",
         max_pg_steps=40,
         pg_rtol=1e-3,
         refinements=1,
         degree=1,
+        epsilon=1e-3,
+        save_pvd=True,
+    )
+    # problem.pg_solve()
+
+
+    problem =Alfeld(
+        n=5,
+        alpha0=1e-1,
+        alpha_max=1e1,
+        snes_atol=1e-5,
+        model_parameter=1e1,
+        smoothing_its=5,
+        preconditioner="block_cg_jacobi_star",
+        max_pg_steps=40,
+        pg_rtol=1e-3,
+        refinements=1,
+        degree=3,
         epsilon=1e-3,
         save_pvd=True,
     )

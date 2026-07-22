@@ -120,6 +120,9 @@ class ProximalGalerkin(object):
         nvs, z, u_old, psi_old, alpha = self.pg_setup()
 
         u, psi = z.subfunctions
+        Z = z.function_space()
+        u_dofs = Z.sub(0).dim()
+        psi_dofs = Z.sub(1).dim()
 
         newton_steps = 0
         outer_iterations = 0
@@ -160,6 +163,8 @@ class ProximalGalerkin(object):
             "refinements": self.refinements,
             "cells_per_side": self.n * 2 ** self.refinements,
             "degree": self.degree,
+            "u_dofs": u_dofs,
+            "psi_dofs": psi_dofs,
             "epsilon": self.epsilon,
             "proximal_steps": proximal_step,
             "newton_steps": newton_steps,

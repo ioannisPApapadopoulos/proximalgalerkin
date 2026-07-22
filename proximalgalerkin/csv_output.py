@@ -42,6 +42,8 @@ DEFAULT_COLUMNS = (
     "refinements",
     "cells_per_side",
     "degree",
+    "u_dofs",
+    "psi_dofs",
     "epsilon",
     "model_parameter",
     "alpha0",
@@ -228,8 +230,20 @@ def append_result(path, result: Mapping, columns: Sequence[str] | None = None) -
 
     if output.exists() and output.stat().st_size:
         with output.open(newline="") as handle:
-            reader = csv.reader(handle)
-            fieldnames = next(reader)
+            reader = csv.DictReader(handle)
+            fieldnames = list(reader.fieldnames or [])
+            existing_rows = list(reader)
+
+        missing_fieldnames = [
+            name for name in columns_for([row], columns) if name not in fieldnames
+        ]
+        if missing_fieldnames:
+            fieldnames.extend(missing_fieldnames)
+            with output.open("w", newline="") as handle:
+                writer = csv.DictWriter(handle, fieldnames=fieldnames, extrasaction="ignore")
+                writer.writeheader()
+                for existing_row in existing_rows:
+                    writer.writerow({name: existing_row.get(name, "") for name in fieldnames})
         write_header = False
     else:
         fieldnames = columns_for([row], columns)
