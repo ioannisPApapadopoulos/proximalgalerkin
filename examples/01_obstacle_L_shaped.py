@@ -24,8 +24,8 @@ class ObstacleProblem(ProximalGalerkin):
             markers.interpolate(should_refine)
             base_mesh = base_mesh.refine_marked_elements(markers)
 
-        hierarchy = MeshHierarchy(base_mesh, self.refinements)
-        return hierarchy[-1]
+        mh = MeshHierarchy(base_mesh, self.refinements)
+        return mh[-1]
 
     def function_space(self, mesh):
         U = FunctionSpace(mesh, "CG", self.degree)
@@ -83,24 +83,10 @@ class Vanka(ObstacleProblem):
             markers.interpolate(should_refine)
             base_mesh = base_mesh.refine_marked_elements(markers)
 
-        hierarchy = MeshHierarchy(base_mesh, self.refinements)
-        return hierarchy[-1]
-
-    # def jacobian(self, z, z_test, z_trial):
-    #     eps = Constant(self.epsilon)
-    #     _, psi_trial = split(z_trial)
-    #     _, q = split(z_test)
-    #     J = derivative(self.residual(z), z, z_trial) - inner(eps*psi_trial, q)*dx
-    #     return J
-    
-    def update_alpha(self, alpha):
-        return sqrt(2)* alpha
-
+        mh = MeshHierarchy(base_mesh, self.refinements)
+        return mh[-1]
 
 if __name__ == "__main__":
-    # problem = ObstacleProblem(n=50, alpha0=1e-1)
-    # problem.pg_solve()
-
     # problem = OperatorPrecon(
     #     n=10,
     #     alpha0=1e-3,
@@ -116,20 +102,21 @@ if __name__ == "__main__":
     # )
     # problem.pg_solve()
     # solve_and_append(problem, "01_obstacle_results.csv")
-
-
-    problem = Vanka(
-            n=50,
-            alpha0=1e-1,
-            preconditioner="monolithic_vanka",
-            max_pg_steps=40,
-            pg_rtol=1e-3,
-            alpha_max=30.0,
-            refinements=1,
-            degree=4,
-            snes_atol=1e-5,
-            smoothing_its=5,
-            epsilon=1e-5,
-            save_pvd=True,
-        )
-    problem.pg_solve()
+    for n in [32,64]:
+        for refinements in [1,2]:
+            for degree in [1,2,3]:
+                problem = Vanka(
+                        n=n,
+                        alpha0=1e-1,
+                        preconditioner="monolithic_vanka",
+                        max_pg_steps=40,
+                        pg_rtol=1e-3,
+                        alpha_max=30.0,
+                        refinements=refinements,
+                        degree=degree,
+                        snes_atol=1e-5,
+                        smoothing_its=5,
+                        epsilon=1e-5,
+                        save_pvd=False,
+                    )
+                problem.pg_solve()
