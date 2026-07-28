@@ -53,6 +53,11 @@ class ObstacleProblem(ProximalGalerkin):
         u.rename("u")
         out.write(u)
 
+class ObstacleProblemDG(ObstacleProblem):
+    def function_space(self, mesh):
+        U = FunctionSpace(mesh, "CG", self.degree+1)
+        P = FunctionSpace(mesh, "DG", self.degree-1)
+        return U * P    
 
 class OperatorPrecon(ObstacleProblem):
     def jacobian_p(self, z, z_test, z_trial):
@@ -62,6 +67,12 @@ class OperatorPrecon(ObstacleProblem):
         J = self.jacobian(z, z_test, z_trial)
         eps = Constant(self.epsilon)
         return J + inner(1.0/(exp(-psi)+eps)*u_trial,v)*dx-inner(eps*psi_trial,q)*dx
+
+class OperatorPreconDG(OperatorPrecon):
+    def function_space(self, mesh):
+        U = FunctionSpace(mesh, "CG", self.degree+1)
+        P = FunctionSpace(mesh, "DG", self.degree-1)
+        return U * P        
 
 class Vanka(ObstacleProblem):
     def mesh(self):
@@ -86,22 +97,72 @@ class Vanka(ObstacleProblem):
         mh = MeshHierarchy(base_mesh, self.refinements)
         return mh[-1]
 
+class VankaDG(Vanka):
+    def function_space(self, mesh):
+        U = FunctionSpace(mesh, "CG", self.degree+1)
+        P = FunctionSpace(mesh, "DG", self.degree-1)
+        return U * P
+
 if __name__ == "__main__":
-    # problem = OperatorPrecon(
-    #     n=10,
-    #     alpha0=1e-3,
-    #     preconditioner="block_cg_jacobi_chebyshev",
-    #     max_pg_steps=40,
-    #     pg_rtol=1e-3,
-    #     alpha_max=30.0,
-    #     refinements=1,
-    #     degree=1,
-    #     epsilon=1e-5,
-    #     snes_atol=1e-5,
-    #     save_pvd=True,
-    # )
+    # problem = ObstacleProblemDG(
+    #         n=32,
+    #         alpha0=1e-1,
+    #         preconditioner="lu",
+    #         max_pg_steps=40,
+    #         pg_rtol=1e-3,
+    #         alpha_max=30.0,
+    #         refinements=1,
+    #         degree=2,
+    #         snes_atol=1e-5,
+    #         smoothing_its=5,
+    #         epsilon=1e-5,
+    #         save_pvd=False,
+    #     )
     # problem.pg_solve()
     # solve_and_append(problem, "01_obstacle_results.csv")
+
+    for n in [32,64]:
+        for refinements in [1,2]:
+            for degree in [1,2,3]:
+                if n == 32 and refinements == 2:
+                    break
+                problem = ObstacleProblem(
+                        n=n,
+                        alpha0=1e-1,
+                        preconditioner="lu",
+                        max_pg_steps=40,
+                        pg_rtol=1e-3,
+                        alpha_max=30.0,
+                        refinements=refinements,
+                        degree=degree,
+                        snes_atol=1e-5,
+                        smoothing_its=5,
+                        epsilon=0.0,
+                        save_pvd=False,
+                    )
+                solve_and_append(problem, "results/01_obstacle_results.csv")
+
+    # for n in [32,64]:
+    #     for refinements in [1,2]:
+    #         for degree in [1,2]:
+    #             if n == 32 and refinements == 2:
+    #                 break
+    #             problem = ObstacleProblemDG(
+    #                     n=n,
+    #                     alpha0=1e-1,
+    #                     preconditioner="lu",
+    #                     max_pg_steps=40,
+    #                     pg_rtol=1e-3,
+    #                     alpha_max=30.0,
+    #                     refinements=refinements,
+    #                     degree=degree,
+    #                     snes_atol=1e-5,
+    #                     smoothing_its=5,
+    #                     epsilon=0.0,
+    #                     save_pvd=False,
+    #                 )
+    #             solve_and_append(problem, "results/01_obstacle_results.csv")
+
     for n in [32,64]:
         for refinements in [1,2]:
             for degree in [1,2,3]:
@@ -116,7 +177,102 @@ if __name__ == "__main__":
                         degree=degree,
                         snes_atol=1e-5,
                         smoothing_its=5,
+                        epsilon=0.0,
+                        save_pvd=False,
+                    )
+                solve_and_append(problem, "results/01_obstacle_results.csv")
+
+    # for n in [32,64]:
+    #     for refinements in [1,2]:
+    #         for degree in [1,2]:
+    #             problem = VankaDG(
+    #                     n=n,
+    #                     alpha0=1e-1,
+    #                     preconditioner="monolithic_vanka",
+    #                     max_pg_steps=40,
+    #                     pg_rtol=1e-3,
+    #                     alpha_max=30.0,
+    #                     refinements=refinements,
+    #                     degree=degree,
+    #                     snes_atol=1e-5,
+    #                     smoothing_its=5,
+    #                     epsilon=0.0,
+    #                     save_pvd=False,
+    #                 )
+    #             solve_and_append(problem, "results/01_obstacle_results.csv")
+
+    for n in [32,64]:
+        for refinements in [1,2]:
+            for degree in [1,2,3]:
+                problem = OperatorPrecon(
+                        n=n,
+                        alpha0=1e-1,
+                        preconditioner="block_cg_bjacobi_chebyshev_jacobi",
+                        max_pg_steps=40,
+                        pg_rtol=1e-3,
+                        alpha_max=30.0,
+                        refinements=refinements,
+                        degree=degree,
+                        snes_atol=1e-5,
+                        smoothing_its=5,
                         epsilon=1e-5,
                         save_pvd=False,
                     )
-                problem.pg_solve()
+                solve_and_append(problem, "results/01_obstacle_results.csv")
+
+    for n in [32,64]:
+        for refinements in [1,2]:
+            for degree in [1,2,3]:
+                problem = OperatorPrecon(
+                        n=n,
+                        alpha0=1e-1,
+                        preconditioner="block_cg_bjacobi_star",
+                        max_pg_steps=40,
+                        pg_rtol=1e-3,
+                        alpha_max=30.0,
+                        refinements=refinements,
+                        degree=degree,
+                        snes_atol=1e-5,
+                        smoothing_its=5,
+                        epsilon=1e-5,
+                        save_pvd=False,
+                    )
+                solve_and_append(problem, "results/01_obstacle_results.csv")
+
+    # for n in [32,64]:
+    #     for refinements in [1,2]:
+    #         for degree in [1,2]:
+    #             problem = OperatorPreconDG(
+    #                     n=n,
+    #                     alpha0=1e-1,
+    #                     preconditioner="block_cg_bjacobi_chebyshev_jacobi",
+    #                     max_pg_steps=40,
+    #                     pg_rtol=1e-3,
+    #                     alpha_max=30.0,
+    #                     refinements=refinements,
+    #                     degree=degree,
+    #                     snes_atol=1e-5,
+    #                     smoothing_its=5,
+    #                     epsilon=1e-5,
+    #                     save_pvd=False,
+    #                 )
+    #             solve_and_append(problem, "results/01_obstacle_results.csv")
+
+    # for n in [32,64]:
+    #     for refinements in [1,2]:
+    #         for degree in [1,2]:
+    #             problem = OperatorPreconDG(
+    #                     n=n,
+    #                     alpha0=1e-1,
+    #                     preconditioner="block_cg_bjacobi_star",
+    #                     max_pg_steps=40,
+    #                     pg_rtol=1e-3,
+    #                     alpha_max=30.0,
+    #                     refinements=refinements,
+    #                     degree=degree,
+    #                     snes_atol=1e-5,
+    #                     smoothing_its=5,
+    #                     epsilon=1e-5,
+    #                     save_pvd=False,
+    #                 )
+    #             solve_and_append(problem, "results/01_obstacle_results.csv")
