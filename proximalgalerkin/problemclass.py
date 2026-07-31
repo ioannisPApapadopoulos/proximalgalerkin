@@ -123,6 +123,7 @@ class ProximalGalerkin(object):
         Z = z.function_space()
         u_dofs = Z.sub(0).dim()
         psi_dofs = Z.sub(1).dim()
+        info_g(f"Starting PG Solve: u dofs: {u_dofs}, psi dof: {psi_dofs}.")
 
         newton_steps = 0
         outer_iterations = 0
