@@ -19,6 +19,7 @@ class ProximalGalerkin(object):
                 model_parameter=None,
                 snes_atol=1e-6,
                 save_pvd=False,
+                overlap_no=1,
                 ):
         self.alpha0 = alpha0
         self.preconditioner = preconditioner
@@ -33,6 +34,7 @@ class ProximalGalerkin(object):
         self.model_parameter=model_parameter
         self.snes_atol=snes_atol
         self.save_pvd = save_pvd
+        self.overlap_no = overlap_no
 
     def mesh(self):
         raise NotImplementedError

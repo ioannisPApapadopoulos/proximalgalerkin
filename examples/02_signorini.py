@@ -2,6 +2,13 @@ from firedrake import *
 from netgen.occ import *
 from proximalgalerkin import *
 
+"""
+Currently needs Firedrake branch: pbrubeck/robust-multigrid
+
+Run make in firedrake after git pull
+Run make in petsc
+"""
+
 class SignoriniProblem(ProximalGalerkin):
 
     def mesh(self):
@@ -49,8 +56,8 @@ class SignoriniProblem(ProximalGalerkin):
         mesh = self.mesh
         degree = self.degree
         contact_boundary = self.contact_boundary
-        dx_1 = Measure("dx", mesh, intersect_measures=(Measure("dx", mesh),Measure("ds", contact_boundary)),metadata={'quadrature_degree': 4*degree})
-        ds_2 = Measure("dx", contact_boundary, intersect_measures=(Measure("ds", mesh),),metadata={'quadrature_degree': 4*degree})
+        dx_1 = Measure("dx", mesh, intersect_measures=(Measure("dx", mesh),Measure("ds", contact_boundary)),metadata={'max_quadrature_degree': 4*degree})
+        ds_2 = Measure("dx", contact_boundary, intersect_measures=(Measure("ds", mesh),),metadata={'max_quadrature_degree': 4*degree})
 
         self.dx_1 = dx_1
         self.ds_2 = ds_2
@@ -116,37 +123,151 @@ if __name__ == "__main__":
     # problem = SignoriniProblem(n=20, alpha0=1e0,alpha_max=1e2, model_parameter=20.0, save_pvd=True)
     # problem.pg_solve()
 
-    problem = OperatorPrecon(
-        n=20,
-        alpha0=1e0,
-        alpha_max=1e2,
-        snes_atol=1e-5,
-        model_parameter=20.0,
-        preconditioner="block_cg_jacobi_star",
-        smoothing_its=5,
-        max_pg_steps=40,
-        pg_rtol=1e-3,
-        refinements=1,
-        degree=1,
-        epsilon=1e-4,
-        save_pvd=True,
-    )
-    # problem.pg_solve()
+    lmbda = 1e1
+    for n in [30]:
+        for refinements in [1,2]:
+            for degree in [1,2]:
+                problem = SignoriniProblem(
+                        n=n,
+                        alpha0=1e0,
+                        alpha_max=1e2,
+                        snes_atol=1e-5,
+                        model_parameter=lmbda,
+                        preconditioner="lu",
+                        smoothing_its=5,
+                        max_pg_steps=40,
+                        pg_rtol=1e-3,
+                        refinements=refinements,
+                        degree=degree,
+                        epsilon=1e-4,
+                        save_pvd=False,
+                    )
+                solve_and_append(problem, "results/02_signorini_results.csv")
 
-    problem = MTW(
-        n=20,
-        alpha0=1e0,
-        alpha_max=1e2,
-        snes_atol=1e-5,
-        model_parameter=20000.0,
-        preconditioner="block_cg_jacobi_star",
-        smoothing_its=5,
-        max_pg_steps=40,
-        pg_rtol=1e-3,
-        refinements=1,
-        degree=1,
-        epsilon=1e-4,
-        save_pvd=True,
-    )
-    problem.pg_solve()
-    # solve_and_append(problem, "02_signorini_results.csv")
+                problem = OperatorPrecon(
+                    n=n,
+                    alpha0=1e0,
+                    alpha_max=1e2,
+                    snes_atol=1e-5,
+                    model_parameter=lmbda,
+                    preconditioner="block_cg_bjacobi_chebyshev_jacobi",
+                    smoothing_its=5,
+                    max_pg_steps=40,
+                    pg_rtol=1e-3,
+                    refinements=refinements,
+                    degree=degree,
+                    epsilon=1e-4,
+                    save_pvd=False,
+                )
+                solve_and_append(problem, "results/02_signorini_results.csv")
+
+                problem = OperatorPrecon(
+                    n=n,
+                    alpha0=1e0,
+                    alpha_max=1e2,
+                    snes_atol=1e-5,
+                    model_parameter=lmbda,
+                    preconditioner="block_cg_bjacobi_star",
+                    smoothing_its=5,
+                    max_pg_steps=40,
+                    pg_rtol=1e-3,
+                    refinements=refinements,
+                    degree=degree,
+                    epsilon=1e-4,
+                    save_pvd=False,
+                )
+                solve_and_append(problem, "results/02_signorini_results.csv")
+
+                if degree < 2:
+                    problem = MTW(
+                        n=n,
+                        alpha0=1e0,
+                        alpha_max=1e2,
+                        snes_atol=1e-5,
+                        model_parameter=lmbda,
+                        preconditioner="block_cg_bjacobi_star",
+                        smoothing_its=5,
+                        max_pg_steps=40,
+                        pg_rtol=1e-3,
+                        refinements=refinements,
+                        degree=degree,
+                        epsilon=1e-4,
+                        save_pvd=False,
+                    )
+                    solve_and_append(problem, "results/02_signorini_results.csv")
+
+                
+                if degree > 1:
+                    problem = Alfeld(
+                        n=n,
+                        alpha0=1e0,
+                        alpha_max=1e2,
+                        snes_atol=1e-5,
+                        model_parameter=lmbda,
+                        preconditioner="block_cg_bjacobi_star",
+                        smoothing_its=5,
+                        max_pg_steps=40,
+                        pg_rtol=1e-3,
+                        refinements=refinements,
+                        degree=degree,
+                        epsilon=1e-4,
+                        save_pvd=False,
+                    )
+                    solve_and_append(problem, "results/02_signorini_results.csv")
+
+    n = 30
+    refinements = 1
+    for lmbda in [1e2, 1e3, 1e4, 1e5]:
+        problem = MTW(
+            n=n,
+            alpha0=1e0,
+            alpha_max=1e2,
+            snes_atol=1e-5,
+            model_parameter=lmbda,
+            preconditioner="block_cg_bjacobi_star",
+            smoothing_its=5,
+            max_pg_steps=40,
+            pg_rtol=1e-3,
+            refinements=refinements,
+            degree=1,
+            epsilon=1e-4,
+            save_pvd=False,
+        )
+        solve_and_append(problem, "results/02_signorini_results.csv")
+
+        problem = Alfeld(
+            n=n,
+            alpha0=1e0,
+            alpha_max=1e2,
+            snes_atol=1e-5,
+            model_parameter=lmbda,
+            preconditioner="block_cg_bjacobi_star",
+            smoothing_its=5,
+            max_pg_steps=40,
+            pg_rtol=1e-3,
+            refinements=refinements,
+            degree=2,
+            epsilon=1e-4,
+            save_pvd=False,
+        )
+        solve_and_append(problem, "results/02_signorini_results.csv")
+
+
+    for n in [60]:
+        for lmbda in [1e2, 1e3, 1e4]:
+            problem = OperatorPrecon(
+                n=n,
+                alpha0=1e0,
+                alpha_max=1e2,
+                snes_atol=1e-5,
+                model_parameter=lmbda,
+                preconditioner="block_cg_bjacobi_star",
+                smoothing_its=5,
+                max_pg_steps=40,
+                pg_rtol=1e-3,
+                refinements=refinements,
+                degree=1,
+                epsilon=1e-4,
+                save_pvd=False,
+            )
+            solve_and_append(problem, "results/02_signorini_results.csv")

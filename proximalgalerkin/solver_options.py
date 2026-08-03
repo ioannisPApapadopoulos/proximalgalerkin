@@ -8,6 +8,7 @@ BLOCK_VARIANTS = {
     "block_cg_jacobi_chebyshev_jacobi": {"top_left": "cg_jacobi", "bottom": "chebyshev_jacobi"},
     "block_cg_bjacobi_chebyshev_bjacobi": {"top_left": "cg_bjacobi", "bottom": "chebyshev_bjacobi"},
     "block_cg_jacobi_chebyshev_bjacobi": {"top_left": "cg_jacobi", "bottom": "chebyshev_bjacobi"},
+    "block_cg_bjacobi_lu": {"top_left": "cg_bjacobi", "bottom": "lu"},
 }
 
 MONOLITHIC_SOLVERS = {"monolithic_vanka"}
@@ -135,9 +136,10 @@ def bottom_mg_levels(kind, smoothing_its):
         "star": {
             "ksp_convergence_test": "skip",
             "ksp_max_it": smoothing_its,
-            "ksp_type": "gmres",
+            "ksp_type": "chebyshev",
             "pc_type": "python",
             "pc_python_type": "firedrake.ASMStarPC",
+            "pc_star_use_coloring": True,
         },
         "chebyshev_jacobi": {
             "ksp_convergence_test": "skip",
@@ -159,6 +161,7 @@ def block_parameters(top_left, bottom, smoothing_its, atol):
     return {
         "snes_monitor": None,
         "mat_type": "nest",
+        # "pmat_type": "aij",
         "snes_stol": 0,
         "snes_atol": atol,
         "ksp_type": "fgmres",

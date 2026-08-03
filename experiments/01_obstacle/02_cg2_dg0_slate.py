@@ -54,7 +54,7 @@ F = alpha * derivative(E, u, v)
 F += inner(p - p_old, v)*dx
 F += inner(u + exp(-p) - phi, q)*dx
 
-epsilon = Constant(1e-10)
+epsilon = Constant(1e-6)
 
 
 v0, q0 = TestFunctions(Z)
@@ -71,7 +71,12 @@ S = A + Baux * Inverse(Daux) * Baux.T
 
 Jp = S - D + B + B.T
 
-# assemble(Jp).petscmat.view()
+
+# z_trial = TrialFunction(Z)
+# epsilon = Constant(1e-5)
+# u_trial, psi_trial =  split(z_trial)
+# J = derivative(F, z, z_trial) #- inner(epsilon*psi_trial, q)*dx
+# Jp = J + inner(1.0/(exp(-p)+epsilon)*u_trial,v)*dx - inner(epsilon*psi_trial, q)*dx
 
 sp_krylov = {
     "mat_type": "matfree",
@@ -79,53 +84,13 @@ sp_krylov = {
     "snes_monitor": None,
     "snes_converged_reason": None,
     "snes_stol": 0,
-    "snes_atol": 1e-6,
-    "ksp_type": "gmres",
-    "ksp_converged_reason": None,
-    "ksp_monitor_true_residual": None,
-    "ksp_max_it": 200,
-    "ksp_atol": 1e-7,
-    "ksp_rtol": 1e-7,
-    "pc_use_amat": False,
-    "pc_type": "fieldsplit",
-    "pc_fieldsplit_type": "schur",
-    "pc_fieldsplit_schur_factorization_type": "full",
-    # "pc_fieldsplit_schur_precondition": "selfp",
-    "pc_fieldsplit_0_fields": "1",
-    "pc_fieldsplit_1_fields": "0",
-    "fieldsplit_ksp_type": "preonly",
-    "fieldsplit_1": {
-        # "pc_use_amat": False,
-        # "pc_type": "python",
-        # "pc_python_type": "firedrake.AssembledPC",
-        # "assembled" : {
-            "pc_use_amat": False,
-            "pc_type": "lu",
-            "pc_factor_mat_solver_type": "mumps",
-        },
-    # },
-    "fieldsplit_0": {
-        "ksp_converged_reason": None,
-        "pc_use_amat": False,
-        # "ksp_type": "cg",
-        "pc_type": "jacobi",
-    },
-}
-
-
-sp_mg = {
-    "mat_type": "matfree",
-    "pmat_type": "aij",
-    "snes_monitor": None,
-    "snes_converged_reason": None,
-    "snes_stol": 0,
-    "snes_atol": 1e-6,
+    "snes_atol": 1e-5,
     "ksp_type": "fgmres",
     "ksp_converged_reason": None,
     "ksp_monitor_true_residual": None,
     "ksp_max_it": 200,
-    "ksp_atol": 1e-7,
-    "ksp_rtol": 1e-7,
+    "ksp_atol": 1e-6,
+    "ksp_rtol": 1e-6,
     "pc_use_amat": False,
     "pc_type": "fieldsplit",
     "pc_fieldsplit_type": "schur",
@@ -133,36 +98,35 @@ sp_mg = {
     # "pc_fieldsplit_schur_precondition": "selfp",
     "pc_fieldsplit_0_fields": "1",
     "pc_fieldsplit_1_fields": "0",
-    "fieldsplit_ksp_type": "preonly",
+    # "fieldsplit_ksp_type": "preonly",
     "fieldsplit_1": {
+        "ksp_type": "preonly",
         "pc_use_amat": False,
         "pc_type": "mg",
-        "pc_mg_type": "full",
-        "mg_coarse_mat_type": "aij",
-        "mg_coarse_pc_type": "lu",
-        # "mg_coarse_pc_use_amat": False,
-        "mg_coarse_pc_factor_mat_solver_type": "mumps",
-        "mg_coarse_mat_mumps_icntl_14": 1000,
-        "mg_levels": {
-            "ksp_convergence_test": "skip",
-            "ksp_max_it": 5,
-            "ksp_type": "chebyshev",
-            "pc_type": "jacobi",
-            # "pc_use_amat": False,
-        },
+        "mg_levels_ksp_type": "chebyshev",
+        "mg_levels_ksp_max_it": 5,
+        "mg_levels_pc_type": "jacobi",
+        # "mg_levels_pc_python_type": "firedrake.ASMStarPC",
+        # "mg_levels_pc_star_use_coloring": True,
+        # "mg_coarse_pc_type": "lu",
+        # "mg_coarse_pc_factor_mat_solver_type": "mumps",
+
+        # "pc_use_amat": False,
+        # "pc_type": "lu",
+        # "pc_factor_mat_solver_type": "mumps",
     },
     "fieldsplit_0": {
-        "ksp_converged_reason": None,
+        "ksp_type": "cg",
         "pc_use_amat": False,
-        # "ksp_type": "cg",
         "pc_type": "jacobi",
+        "ksp_converged_reason": None,
     },
 }
 
 bcs = DirichletBC(Z.sub(0), 0, "on_boundary")
 
 nvp = NonlinearVariationalProblem(F, z, Jp=Jp, bcs=bcs)
-nvs = NonlinearVariationalSolver(nvp, solver_parameters=sp_mg, pre_apply_bcs=False)
+nvs = NonlinearVariationalSolver(nvp, solver_parameters=sp_krylov, pre_apply_bcs=False)
 
 u, p = z.subfunctions
 u.rename("u")

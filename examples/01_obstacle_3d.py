@@ -70,23 +70,121 @@ class OperatorPrecon(ObstacleProblem):
         eps = Constant(self.epsilon)
         return J + inner(1.0/(exp(-psi)+eps)*u_trial,v)*dx-inner(eps*psi_trial,q)*dx
 
+class Vanka(ObstacleProblem):
+    def mesh(self):
+        distribution_parameters = {"overlap_type": (DistributedMeshOverlapType.VERTEX, 2)}
+        maxh = 1.0/self.n
+
+        shape = Box(Pnt(0,0,0), Pnt(2,2,2)) - Box(Pnt(1,1,1), Pnt(2,2,2))
+        geo = OCCGeometry(shape, dim=3)
+        ngmesh = geo.GenerateMesh(maxh=maxh)
+
+        base_mesh = Mesh(ngmesh, distribution_parameters=distribution_parameters)
+
+        (x, y, z) = SpatialCoordinate(base_mesh)
+        r_squared = (x - 1)**2 + (y - 1)**2 + (z - 1)**2
+
+        for r in [0.05]:
+            should_refine = conditional(lt(r_squared, r), 1, 0)
+            DG0 = FunctionSpace(base_mesh, "DG", 0)
+            markers = Function(DG0)
+            markers.interpolate(should_refine)
+            base_mesh = base_mesh.refine_marked_elements(markers)
+
+        mh = MeshHierarchy(base_mesh, self.refinements)
+        return mh[-1]
+    
 if __name__ == "__main__":
-    # problem = ObstacleProblem(n=10, alpha0=1e-4, snes_atol=1e-6, save_pvd=True)
+
+    # problem = OperatorPrecon(
+    #         n=10,
+    #         alpha0=1e-4,
+    #         preconditioner="block_cg_bjacobi_chebyshev_jacobi",
+    #         max_pg_steps=40,
+    #         pg_rtol=1e-3,
+    #         alpha_max=1e-1,
+    #         refinements=1,
+    #         degree=1,
+    #         snes_atol=1e-6,
+    #         smoothing_its=5,
+    #         epsilon=1e-4,
+    #         save_pvd=False,
+    #     )
     # problem.pg_solve()
 
-    problem = OperatorPrecon(
-        n=5,
-        alpha0=1e-4,
-        preconditioner="block_cg_jacobi_chebyshev",
-        max_pg_steps=60,
-        pg_rtol=1e-3,
-        alpha_max=1e-1,
-        refinements=2,
-        degree=1,
-        epsilon=1e-4,
-        snes_atol=1e-6,
-        smoothing_its=5,
-        save_pvd=True,
-    )
-    problem.pg_solve()
-    # solve_and_append(problem, "01_obstacle_results.csv")
+
+    # for n in [20]:
+    #     for refinements in [1,2]:
+    #         for degree in [1,2]:
+    #             problem = ObstacleProblem(
+    #                     n=n,
+    #                     alpha0=1e-4,
+    #                     preconditioner="lu",
+    #                     max_pg_steps=40,
+    #                     pg_rtol=1e-3,
+    #                     alpha_max=1e-1,
+    #                     refinements=refinements,
+    #                     degree=degree,
+    #                     snes_atol=1e-6,
+    #                     smoothing_its=5,
+    #                     epsilon=0.0,
+    #                     save_pvd=False,
+    #                 )
+    #             solve_and_append(problem, "results/01_obstacle_3d_results.csv")
+
+    for n in [20]:
+        for refinements in [1,2]:
+            for degree in [1,2]:
+                problem = Vanka(
+                        n=n,
+                        alpha0=1e-4,
+                        preconditioner="monolithic_vanka",
+                        max_pg_steps=40,
+                        pg_rtol=1e-3,
+                        alpha_max=1e-1,
+                        refinements=refinements,
+                        degree=degree,
+                        snes_atol=1e-6,
+                        smoothing_its=5,
+                        epsilon=0.0,
+                        save_pvd=False,
+                    )
+                solve_and_append(problem, "results/01_obstacle_3d_results.csv")
+    
+    for n in [20]:
+        for refinements in [1,2]:
+            for degree in [1,2]:
+                problem = OperatorPrecon(
+                        n=n,
+                        alpha0=1e-4,
+                        preconditioner="block_cg_bjacobi_chebyshev_jacobi",
+                        max_pg_steps=40,
+                        pg_rtol=1e-3,
+                        alpha_max=1e-1,
+                        refinements=refinements,
+                        degree=degree,
+                        snes_atol=1e-6,
+                        smoothing_its=5,
+                        epsilon=1e-4,
+                        save_pvd=False,
+                    )
+                solve_and_append(problem, "results/01_obstacle_3d_results.csv")
+
+    for n in [20]:
+        for refinements in [1,2]:
+            for degree in [1,2]:
+                problem = OperatorPrecon(
+                        n=n,
+                        alpha0=1e-4,
+                        preconditioner="block_cg_bjacobi_star",
+                        max_pg_steps=40,
+                        pg_rtol=1e-3,
+                        alpha_max=1e-1,
+                        refinements=refinements,
+                        degree=degree,
+                        snes_atol=1e-6,
+                        smoothing_its=5,
+                        epsilon=1e-4,
+                        save_pvd=False,
+                    )
+                solve_and_append(problem, "results/01_obstacle_3d_results.csv")
