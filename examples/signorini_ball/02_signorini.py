@@ -17,7 +17,7 @@ class SignoriniProblem(ProximalGalerkin):
             base_mesh = Mesh(Mesh(ngmesh).curve_field(degree), distribution_parameters=distribution_parameters)
         else:
             base_mesh = Mesh(ngmesh, distribution_parameters=distribution_parameters)
-        mh = MeshHierarchy(base_mesh, self.refinements)
+        mh = MeshHierarchy(base_mesh, self.refinements, coarse_facet_label=333)
         mh_contact = SubmeshHierarchy(mh, subdomain_id="on_boundary")
         mesh = mh[-1]
         self.mesh = mesh
