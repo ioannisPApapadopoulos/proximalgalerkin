@@ -212,7 +212,7 @@ def monolithic_vanka_parameters(smoothing_its,atol):
         "pc_use_amat": False,
         "pc_type": "mg",
         "mg_levels": {
-            "ksp_type": "gmres",
+            "ksp_type": "chebyshev",
             "ksp_max_it": smoothing_its,
             "pc_type": "python",
             "pc_python_type": "firedrake.ASMVankaPC",

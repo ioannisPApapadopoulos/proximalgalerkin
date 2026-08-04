@@ -6,7 +6,7 @@ from proximalgalerkin import *
 class ObstacleProblem(ProximalGalerkin):
 
     def mesh(self):
-        distribution_parameters = {"overlap_type": (DistributedMeshOverlapType.VERTEX, 1)}
+        distribution_parameters = {"overlap_type": (DistributedMeshOverlapType.VERTEX, self.overlap_no)}
         maxh = 1.0/self.n
         wp = WorkPlane()
         L_shape = wp.Rectangle(2,2).Face() - wp.Rectangle(1,1).Face().Move((1,1,0))
