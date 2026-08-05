@@ -21,7 +21,7 @@ class SignoriniProblem(ProximalGalerkin):
         shape.edges.Min(Y).name="bottom"
         geo = OCCGeometry(shape, dim=2)
         ngmesh = geo.GenerateMesh(maxh=maxh)
-        distribution_parameters = {"overlap_type": (DistributedMeshOverlapType.VERTEX, 1),}
+        distribution_parameters = {"overlap_type": (DistributedMeshOverlapType.VERTEX, self.overlap_no),}
 
         base_mesh = Mesh(ngmesh, distribution_parameters=distribution_parameters)
         mh = MeshHierarchy(base_mesh, self.refinements, coarse_facet_label=1000)

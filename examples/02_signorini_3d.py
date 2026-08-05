@@ -122,43 +122,6 @@ class Alfeld(OperatorPrecon):
         return CoarsePatchTransferManager()
 
 if __name__ == "__main__":
-    # problem = SignoriniProblem(n=5, alpha0=1e-2, alpha_max=1e1, snes_atol=1e-5, model_parameter=20.0, save_pvd=True)
-    # problem.pg_solve()
-
-    # problem =OperatorPrecon(
-    #     n=5,
-    #     alpha0=1e-1,
-    #     alpha_max=1e1,
-    #     snes_atol=1e-5,
-    #     model_parameter=1e1,
-    #     smoothing_its=5,
-    #     preconditioner="block_cg_jacobi_star",
-    #     max_pg_steps=40,
-    #     pg_rtol=1e-3,
-    #     refinements=1,
-    #     degree=1,
-    #     epsilon=1e-3,
-    #     save_pvd=True,
-    # )
-    # # problem.pg_solve()
-
-
-    # problem =Alfeld(
-    #     n=5,
-    #     alpha0=1e-1,
-    #     alpha_max=1e1,
-    #     snes_atol=1e-5,
-    #     model_parameter=1e1,
-    #     smoothing_its=5,
-    #     preconditioner="block_cg_jacobi_star",
-    #     max_pg_steps=40,
-    #     pg_rtol=1e-3,
-    #     refinements=1,
-    #     degree=3,
-    #     epsilon=1e-3,
-    #     save_pvd=True,
-    # )
-    # problem.pg_solve()
 
     n = 20
     refinements = 1
