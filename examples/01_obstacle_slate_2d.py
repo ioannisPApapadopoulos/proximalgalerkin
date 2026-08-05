@@ -12,6 +12,9 @@ python -m pip install --upgrade   git+https://github.com/firedrakeproject/petsct
 python -m pip uninstall -y firedrake-rtree
 python -m pip install --upgrade   git+https://github.com/firedrakeproject/firedrake-rtree.git@main
 
+git checkout -b jp/slate-fieldsplit
+git merge main
+
 
 """
 class Slate_Jacobi(ObstacleProblem):

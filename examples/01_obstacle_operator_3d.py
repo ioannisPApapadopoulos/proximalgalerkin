@@ -13,8 +13,8 @@ class OperatorPrecon(ObstacleProblem):
     
 if __name__ == "__main__":
 
-    for n in [10]:
-        for refinements in [1,2,3]:
+    for n in [20]:
+        for refinements in [1,2]:
             for degree in [1,2]:
                 problem = ObstacleProblem(
                         n=n,
@@ -33,8 +33,8 @@ if __name__ == "__main__":
                     )
                 solve_and_append(problem, "results/01_obstacle_3d_results.csv")
     
-    for n in [10]:
-        for refinements in [1,2,3]:
+    for n in [20]:
+        for refinements in [1,2]:
             for degree in [1,2]:
                 problem = OperatorPrecon(
                         n=n,
@@ -52,8 +52,8 @@ if __name__ == "__main__":
                     )
                 solve_and_append(problem, "results/01_obstacle_3d_results.csv")
 
-    for n in [10]:
-        for refinements in [1,2,3]:
+    for n in [20]:
+        for refinements in [1,2]:
             for degree in [1,2]:
                 problem = OperatorPrecon(
                         n=n,
