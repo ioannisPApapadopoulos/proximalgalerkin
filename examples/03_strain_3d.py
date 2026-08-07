@@ -8,7 +8,7 @@ class StrainProblem(ProximalGalerkin):
     def mesh(self):
         n = self.n
         distribution_parameters = {"overlap_type": (DistributedMeshOverlapType.VERTEX, self.overlap_no),}
-        base_mesh = RectangleMesh(10*n, n, 1, 0.1, distribution_parameters=distribution_parameters)
+        base_mesh = BoxMesh(10*n, n, n, 1, 0.1, 0.1, distribution_parameters=distribution_parameters)
         mh = MeshHierarchy(base_mesh, self.refinements)
         mesh = mh[-1]
         self.mesh = mesh
@@ -17,7 +17,7 @@ class StrainProblem(ProximalGalerkin):
     def function_space(self, mesh):
         degree = self.degree
         V = VectorFunctionSpace(mesh, "CG", degree)
-        W = TensorFunctionSpace(mesh, "DG", degree-1)
+        W = TensorFunctionSpace(mesh, "DG", degree-1, symmetry=None)
         return V*W
 
     def symgrad(self, u):
@@ -35,38 +35,39 @@ class StrainProblem(ProximalGalerkin):
         alpha = self._alpha
         psi_old = self._psi_old
 
-        f = Constant((0,-1e1))
-        phi = Constant(0.4) # 0.4
+        f = Constant((0,0,-1e1))
+        phi = Constant(0.4)
         self.phi = phi
-        Id = Identity(2)
+        Id = Identity(3)
         self.Id = Id
         mu = Constant(70)
         self.mu = mu
 
         degree = self.degree
+        self.scale = Constant(1e3)
 
         F = inner(alpha*self.sigma(u), self.symgrad(v))*dx
         F -= inner(alpha*f, v)*dx
         F += inner(psi-psi_old, self.symgrad(v))*dx
-        F += inner(self.symgrad(u)- self.R(phi,psi), q)*dx(degree=2*degree)
+        F += self.scale*inner(self.symgrad(u)-self.R(phi,psi), q)*dx(degree=0)
         return F
 
     def jacobian(self, z, z_test, z_trial):
         eps = Constant(self.epsilon)
         _, psi_trial = split(z_trial)
         _, q = split(z_test)
-        J = derivative(self.residual(z), z, z_trial) - inner(eps*psi_trial, q)*dx
+        J = derivative(self.residual(z), z, z_trial) #- inner(self.scale*eps*psi_trial, q)*dx
         return J
 
     def boundary_conditions(self, Z):
         return [DirichletBC(Z.sub(0), 0, [1]),
-                DirichletBC(Z.sub(0), Constant((-0.2,0)), [2])]
+                DirichletBC(Z.sub(0), Constant((-0.2,0,0)), [2])]
 
     def update_alpha(self, alpha):
         return sqrt(2) * alpha
  
     def save_solutions(self, u, psi):
-        out = VTKFile("out/Strain_2d.pvd")
+        out = VTKFile("out/Strain_3D.pvd")
         Q = TensorFunctionSpace(self.mesh, "CG", self.degree)
         strain = Function(Q)
         strain.rename("Strain")
@@ -76,11 +77,12 @@ class StrainProblem(ProximalGalerkin):
         strain.interpolate(self.symgrad(u))
         strain_obs.interpolate(self.R(self.phi,psi))
         out.write(u,strain,strain_obs)
-        # mesh = RectangleMesh(1,1,0.05,0.5)
+
+        # mesh = BoxMesh(1,1,1,0.01,0.5,0.5)
         # U = VectorFunctionSpace(mesh, "CG", 1)
         # v = Function(U)
-        # v.assign(Constant((-0.05,-0.3)))
-        # VTKFile("out/Strain_2D_wall.pvd").write(v)
+        # v.assign(Constant((-0.01,-0.2,-0.2)))
+        # VTKFile("out/Strain_3D_wall.pvd").write(v)
 
 class OperatorPrecon(StrainProblem):
 
@@ -95,37 +97,32 @@ class OperatorPrecon(StrainProblem):
         J = self.jacobian(z, z_test, z_trial)
         eps = Constant(self.epsilon)
         J = derivative(self.residual(z), z, z_trial)
-        Jp = J + self.inverse_dR(psi,self.phi,eps,self.symgrad(u_trial),self.symgrad(v))*dx(degree=10*self.degree) - inner(eps*psi_trial, q)*dx
+        Jp = J + self.inverse_dR(psi,self.phi,eps,self.symgrad(u_trial),self.symgrad(v))*dx(degree=2*self.degree) - inner(self.scale*eps*psi_trial, q)*dx
         return Jp
 
 if __name__ == "__main__":
-    problem = StrainProblem(n=40, alpha0=1e-4, model_parameter=1e1, snes_atol=1e-7, pg_rtol=1e-4, save_pvd=True)
+    # problem = StrainProblem(
+    #     n=5, alpha0=1e-2, alpha_max=1e1, 
+    #     snes_atol=1e-6, model_parameter=1e1, 
+    #     refinements=1 ,epsilon=0,degree=1,pg_rtol=1e-4,
+    #     save_pvd=True)
+    # problem.pg_solve()
+
+    problem = OperatorPrecon(
+        n=5,
+        alpha0=1e-2,
+        alpha_max=1e1,
+        model_parameter=1e1,
+        preconditioner="block_cg_bjacobi_chebyshev_jacobi",
+        smoothing_its=5,
+        max_pg_steps=40,
+        refinements=1,
+        degree=1,
+        epsilon=1e-4,
+        save_pvd=True,
+        snes_atol=1e-6,
+        pg_rtol=1e-4,
+    )
     problem.pg_solve()
 
-    # problem = OperatorPrecon(
-    #     n=20,
-    #     alpha0=1e-2,
-    #     model_parameter=300.0,
-    #     preconditioner="block_lu",
-    #     max_pg_steps=40,
-    #     refinements=1,
-    #     degree=2,
-    #     epsilon=1e-4,
-    #     save_pvd=True,
-    #     snes_atol=1e-7,
-    # )
-
-    # problem = LmbdaRobust(
-    #     n=10,
-    #     alpha0=1e-2,
-    #     model_parameter=300.0,
-    #     preconditioner="block_cg_jacobi_chebyshev",
-    #     max_pg_steps=40,
-    #     refinements=1,
-    #     degree=4,
-    #     epsilon=1e-4,
-    #     save_pvd=True,
-    #     snes_atol=1e-7,
-    # )
-    # problem.pg_solve()
     # solve_and_append(problem, "02_signorini_results.csv")
