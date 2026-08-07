@@ -73,7 +73,7 @@ class Slate_Jacobi(ObstacleProblem):
             "fieldsplit_0": {
                 "ksp_type": "cg",
                 "pc_use_amat": False,
-                "pc_type": "jacobi",
+                "pc_type": "bjacobi",
                 "ksp_converged_reason": None,
             },
         }
@@ -115,7 +115,7 @@ class Slate_Star(Slate_Jacobi):
             "fieldsplit_0": {
                 "ksp_type": "cg",
                 "pc_use_amat": False,
-                "pc_type": "jacobi",
+                "pc_type": "bjacobi",
                 "ksp_converged_reason": None,
             },
         }
