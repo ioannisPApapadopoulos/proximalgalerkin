@@ -123,7 +123,7 @@ class Slate_Star(Slate_Jacobi):
 
 if __name__ == "__main__":
     for n in [20]:
-        for refinements in [1,2]:
+        for refinements in [1]:
             for degree in [1,2]:
                 problem = Slate_Jacobi(
                         n=n,
@@ -145,7 +145,7 @@ if __name__ == "__main__":
                 problem = Slate_Star(
                         n=n,
                         alpha0=1e-4,
-                        preconditioner="block_cg_bjacobi_chebyshev_jacobi",
+                        preconditioner="block_cg_bjacobi_star",
                         max_pg_steps=40,
                         pg_rtol=1e-3,
                         alpha_max=1e-1,

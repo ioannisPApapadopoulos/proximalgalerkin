@@ -9,6 +9,7 @@ BLOCK_VARIANTS = {
     "block_cg_jacobi_chebyshev_jacobi": {"top_left": "cg_jacobi", "bottom": "chebyshev_jacobi"},
     "block_cg_bjacobi_chebyshev_bjacobi": {"top_left": "cg_bjacobi", "bottom": "chebyshev_bjacobi"},
     "block_cg_jacobi_chebyshev_bjacobi": {"top_left": "cg_jacobi", "bottom": "chebyshev_bjacobi"},
+    "block_cg_bjacobi_gmres_bjacobi": {"top_left": "cg_bjacobi", "bottom": "gmres_bjacobi"},
     "block_cg_bjacobi_lu": {"top_left": "cg_bjacobi", "bottom": "lu"},
 }
 
@@ -160,6 +161,12 @@ def bottom_mg_levels(kind, smoothing_its):
             "ksp_convergence_test": "skip",
             "ksp_max_it": smoothing_its,
             "ksp_type": "chebyshev",
+            "pc_type": "bjacobi"
+        },
+        "gmres_bjacobi": {
+            "ksp_convergence_test": "skip",
+            "ksp_max_it": smoothing_its,
+            "ksp_type": "gmres",
             "pc_type": "bjacobi"
         },
     }

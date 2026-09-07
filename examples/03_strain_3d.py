@@ -17,7 +17,7 @@ class StrainProblem(ProximalGalerkin):
     def function_space(self, mesh):
         degree = self.degree
         V = VectorFunctionSpace(mesh, "CG", degree)
-        W = TensorFunctionSpace(mesh, "DG", degree-1, symmetry=None)
+        W = TensorFunctionSpace(mesh, "DG", degree-1, symmetry=True)
         return V*W
 
     def symgrad(self, u):
@@ -100,6 +100,77 @@ class OperatorPrecon(StrainProblem):
         Jp = J + self.inverse_dR(psi,self.phi,eps,self.symgrad(u_trial),self.symgrad(v))*dx(degree=2*self.degree) - inner(self.scale*eps*psi_trial, q)*dx
         return Jp
 
+class Slate(StrainProblem):
+
+    def jacobian_p(self, z, z_test, z_trial):
+        Z = z.function_space()
+        P = Z.sub(1)
+        u, psi = z.subfunctions
+        u_trial, psi_trial = split(z_trial)
+        v, q = split(z_test)
+
+        alpha = self._alpha
+        eps = Constant(self.epsilon)
+
+        phi = self.phi
+
+        degree = self.degree
+        scale = self.scale
+
+        A = Tensor(inner(alpha*self.sigma(u_trial), self.symgrad(v))*dx)
+        D = Tensor(derivative(scale*inner(-self.R(phi,psi), q)*dx(degree=2*degree), psi, psi_trial)) - scale*inner(eps*psi_trial, q)*dx
+        B = Tensor(inner(psi_trial, self.symgrad(v)) * dx)
+        Bt = Tensor(scale*inner(q, self.symgrad(u_trial)) * dx)
+
+        x0 = TestFunction(P)
+        x1 = TrialFunction(P)
+        Daux = Tensor(derivative(inner(-self.R(phi,psi), x0)*dx(degree=2*degree), psi, x1)) - inner(eps*x1, x0)*dx
+        Baux = Tensor(inner(x1, self.symgrad(v)) * dx)
+        S = A - Baux * Inverse(Daux) * Baux.T
+        Jp = S + D + B + Bt
+
+        return Jp
+
+    def solver_parameters(self):
+        sp = {
+            "mat_type": "matfree",
+            "pmat_type": "aij",
+            "snes_monitor": None,
+            "snes_converged_reason": None,
+            "snes_stol": 0,
+            "snes_atol": self.snes_atol,
+            "ksp_type": "fgmres",
+            "ksp_converged_reason": None,
+            "ksp_monitor_true_residual": None,
+            "ksp_max_it": 200,
+            "ksp_atol": self.snes_atol/1e1,
+            "ksp_rtol": self.snes_atol/1e1,
+            "pc_use_amat": False,
+            "pc_type": "fieldsplit",
+            "pc_fieldsplit_type": "schur",
+            "pc_fieldsplit_schur_factorization_type": "full",
+            "pc_fieldsplit_0_fields": "1",
+            "pc_fieldsplit_1_fields": "0",
+            "fieldsplit_1": {
+                "ksp_type": "preonly",
+                "pc_use_amat": False,
+                "pc_type": "mg",
+                "mg_levels_ksp_convergence_test": "skip",
+                "mg_levels_ksp_type": "gmres",
+                "mg_levels_ksp_max_it": self.smoothing_its,
+                "mg_levels_pc_type": "bjacobi",
+                # "mg_levels_pc_type": "python",
+                # "mg_levels_pc_python_type": "firedrake.ASMStarPC",
+            },
+            "fieldsplit_0": {
+                "ksp_type": "cg",
+                "pc_use_amat": False,
+                "pc_type": "bjacobi",
+                "ksp_converged_reason": None,
+            },
+        }
+        return sp
+
 if __name__ == "__main__":
     # problem = StrainProblem(
     #     n=5, alpha0=1e-2, alpha_max=1e1, 
@@ -112,8 +183,8 @@ if __name__ == "__main__":
         n=5,
         alpha0=1e-2,
         alpha_max=1e1,
-        model_parameter=1e1,
-        preconditioner="block_cg_bjacobi_chebyshev_jacobi",
+        model_parameter=1e2,
+        preconditioner="block_cg_bjacobi_gmres_bjacobi",
         smoothing_its=5,
         max_pg_steps=40,
         refinements=1,

@@ -128,7 +128,7 @@ if __name__ == "__main__":
                 problem = Slate_Jacobi(
                         n=n,
                         alpha0=1e-1,
-                        preconditioner="",
+                        preconditioner="block_cg_bjacobi_chebyshev_jacobi",
                         max_pg_steps=40,
                         pg_rtol=1e-3,
                         alpha_max=30.0,
@@ -145,7 +145,7 @@ if __name__ == "__main__":
                 problem = Slate_Star(
                         n=n,
                         alpha0=1e-1,
-                        preconditioner="",
+                        preconditioner="block_cg_bjacobi_star",
                         max_pg_steps=40,
                         pg_rtol=1e-3,
                         alpha_max=30.0,
