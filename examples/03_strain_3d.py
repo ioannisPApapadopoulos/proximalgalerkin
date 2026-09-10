@@ -44,7 +44,7 @@ class StrainProblem(ProximalGalerkin):
         self.mu = mu
 
         degree = self.degree
-        self.scale = Constant(1e3)
+        self.scale = Constant(1e2)
 
         F = inner(alpha*self.sigma(u), self.symgrad(v))*dx
         F -= inner(alpha*f, v)*dx
@@ -118,13 +118,13 @@ class Slate(StrainProblem):
         scale = self.scale
 
         A = Tensor(inner(alpha*self.sigma(u_trial), self.symgrad(v))*dx)
-        D = Tensor(derivative(scale*inner(-self.R(phi,psi), q)*dx(degree=2*degree), psi, psi_trial)) - scale*inner(eps*psi_trial, q)*dx
+        D = Tensor(derivative(scale*inner(-self.R(phi,psi), q)*dx(degree=0), psi, psi_trial)) - scale*inner(eps*psi_trial, q)*dx
         B = Tensor(inner(psi_trial, self.symgrad(v)) * dx)
         Bt = Tensor(scale*inner(q, self.symgrad(u_trial)) * dx)
 
         x0 = TestFunction(P)
         x1 = TrialFunction(P)
-        Daux = Tensor(derivative(inner(-self.R(phi,psi), x0)*dx(degree=2*degree), psi, x1)) - inner(eps*x1, x0)*dx
+        Daux = Tensor(derivative(inner(-self.R(phi,psi), x0)*dx(degree=0), psi, x1)) - inner(eps*x1, x0)*dx
         Baux = Tensor(inner(x1, self.symgrad(v)) * dx)
         S = A - Baux * Inverse(Daux) * Baux.T
         Jp = S + D + B + Bt
@@ -172,15 +172,9 @@ class Slate(StrainProblem):
         return sp
 
 if __name__ == "__main__":
-    # problem = StrainProblem(
-    #     n=5, alpha0=1e-2, alpha_max=1e1, 
-    #     snes_atol=1e-6, model_parameter=1e1, 
-    #     refinements=1 ,epsilon=0,degree=1,pg_rtol=1e-4,
-    #     save_pvd=True)
-    # problem.pg_solve()
 
     problem = OperatorPrecon(
-        n=5,
+        n=10,
         alpha0=1e-2,
         alpha_max=1e1,
         model_parameter=1e2,
@@ -189,11 +183,51 @@ if __name__ == "__main__":
         max_pg_steps=40,
         refinements=1,
         degree=1,
-        epsilon=1e-4,
+        epsilon=1e-3,
         save_pvd=True,
         snes_atol=1e-6,
         pg_rtol=1e-4,
     )
-    problem.pg_solve()
+    # problem.pg_solve()
 
-    # solve_and_append(problem, "02_signorini_results.csv")
+    epsilon=1e-3
+    lmbda = 1e2
+    smoothing_its=5
+    for n in [10]:
+        for refinements in [1,2]:
+            for degree in [1]:
+
+                problem = OperatorPrecon(
+                    n=n,
+                    alpha0=1e-2,
+                    alpha_max=1e1,
+                    model_parameter=lmbda,
+                    preconditioner="block_cg_bjacobi_gmres_bjacobi",
+                    smoothing_its=smoothing_its,
+                    max_pg_steps=40,
+                    refinements=refinements,
+                    degree=degree,
+                    epsilon=epsilon,
+                    save_pvd=False,
+                    snes_atol=1e-6,
+                    pg_rtol=1e-4,
+                )
+                solve_and_append(problem, "results/03_strain_3d_results.csv")
+                #problem.pg_solve()
+
+                problem = Slate(
+                    n=n,
+                    alpha0=1e-2,
+                    alpha_max=1e1,
+                    model_parameter=lmbda,
+                    preconditioner="block_cg_bjacobi_gmres_bjacobi",
+                    smoothing_its=smoothing_its,
+                    max_pg_steps=40,
+                    refinements=refinements,
+                    degree=degree,
+                    epsilon=epsilon,
+                    save_pvd=False,
+                    snes_atol=1e-6,
+                    pg_rtol=1e-4,
+                )
+                solve_and_append(problem, "results/03_strain_3d_results.csv")

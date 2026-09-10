@@ -44,7 +44,7 @@ class StrainProblem(ProximalGalerkin):
         self.mu = mu
 
         degree = self.degree
-        self.scale = Constant(1e3)
+        self.scale = Constant(1e2)
 
         F = inner(alpha*self.sigma(u), self.symgrad(v))*dx
         F -= inner(alpha*f, v)*dx
@@ -186,194 +186,96 @@ class Slate(StrainProblem):
         return sp
     
 if __name__ == "__main__":
-    problem = StrainProblem(n=20, alpha0=1e-4, refinements=1, model_parameter=1e2, snes_atol=1e-6, pg_rtol=1e-4, save_pvd=True)
+    # problem = StrainProblem(n=20, alpha0=1e-4, refinements=1, model_parameter=1e2, snes_atol=1e-6, pg_rtol=1e-4, save_pvd=True)
     #problem.pg_solve()
 
 
     problem = OperatorPrecon(
-        n=20,
-        alpha0=1e-2,
-        alpha_max=1e1,
-        model_parameter=1e2,
-        preconditioner="block_cg_bjacobi_gmres_bjacobi",
-        smoothing_its=5,
-        max_pg_steps=40,
-        refinements=1,
-        degree=1,
-        epsilon=1e-5,
-        save_pvd=True,
-        snes_atol=1e-6,
-        pg_rtol=1e-4,
-    )
-    problem.pg_solve()
-
-    problem = Slate(
-        n=20,
-        alpha0=1e-2,
-        alpha_max=1e1,
-        model_parameter=1e2,
-        preconditioner="",
-        smoothing_its=5,
-        max_pg_steps=40,
-        refinements=1,
-        degree=1,
-        epsilon=1e-5,
-        save_pvd=True,
-        snes_atol=1e-6,
-        pg_rtol=1e-4,
-    )
+         n=40,
+         alpha0=1e-2,
+         alpha_max=1e1,
+         model_parameter=1e2,
+         preconditioner="block_cg_bjacobi_gmres_bjacobi",
+         smoothing_its=5,
+         max_pg_steps=40,
+         refinements=2,
+         degree=1,
+         epsilon=1e-3,
+         save_pvd=True,
+         snes_atol=1e-6,
+         pg_rtol=1e-4,
+     )
     # problem.pg_solve()
 
+    # problem = Slate(
+    #     n=20,
+    #     alpha0=1e-2,
+    #     alpha_max=1e1,
+    #     model_parameter=1e2,
+    #     preconditioner="",
+    #     smoothing_its=5,
+    #     max_pg_steps=40,
+    #     refinements=1,
+    #     degree=1,
+    #     epsilon=1e-5,
+    #     save_pvd=True,
+    #     snes_atol=1e-6,
+    #     pg_rtol=1e-4,
+    # )
+    # problem.pg_solve()
 
-    # lmbda = 1e1
-    # for n in [30]:
-    #     for refinements in [1,2]:
-    #         for degree in [1,2]:
-    #             problem = StrainProblem(
-    #                     n=n,
-    #                     alpha0=1e-2,
-    #                     alpha_max=1e1,
-    #                     snes_atol=1e-6,
-    #                     model_parameter=lmbda,
-    #                     preconditioner="lu",
-    #                     smoothing_its=5,
-    #                     max_pg_steps=40,
-    #                     pg_rtol=1e-4,
-    #                     refinements=refinements,
-    #                     degree=degree,
-    #                     epsilon=1e-3,
-    #                     save_pvd=False,
-    #                 )
-    #             solve_and_append(problem, "results/03_strain_results.csv")
+    epsilon=1e-3
+    lmbda = 1e2
+    smoothing_its=5
+    for n in [40]:
+        for refinements in [1,2]:
+            for degree in [1]:
+                problem =StrainProblem(
+                    n=n,
+                    alpha0=1e-2,
+                    alpha_max=1e1,
+                    model_parameter=lmbda,
+                    preconditioner="lu",
+                    max_pg_steps=40,
+                    refinements=refinements,
+                    degree=degree,
+                    save_pvd=False,
+                    snes_atol=1e-6,
+                    pg_rtol=1e-4,
+                )
+                solve_and_append(problem, "results/03_strain_results.csv")
 
-    #             problem = OperatorPrecon(
-    #                 n=n,
-    #                 alpha0=1e-2,
-    #                 alpha_max=1e1,
-    #                 snes_atol=1e-6,
-    #                 model_parameter=lmbda,
-    #                 preconditioner="block_cg_bjacobi_chebyshev_jacobi",
-    #                 smoothing_its=5,
-    #                 max_pg_steps=40,
-    #                 pg_rtol=1e-4,
-    #                 refinements=refinements,
-    #                 degree=degree,
-    #                 epsilon=1e-3,
-    #                 save_pvd=False,
-    #             )
-    #             solve_and_append(problem, "results/03_strain_results.csv")
+                problem = OperatorPrecon(
+                    n=n,
+                    alpha0=1e-2,
+                    alpha_max=1e1,
+                    model_parameter=lmbda,
+                    preconditioner="block_cg_bjacobi_gmres_bjacobi",
+                    smoothing_its=smoothing_its,
+                    max_pg_steps=40,
+                    refinements=refinements,
+                    degree=degree,
+                    epsilon=epsilon,
+                    save_pvd=False,
+                    snes_atol=1e-6,
+                    pg_rtol=1e-4,
+                )
+                solve_and_append(problem, "results/03_strain_results.csv")
+                #problem.pg_solve()
 
-    #             problem = OperatorPrecon(
-    #                 n=n,
-    #                 alpha0=1e-2,
-    #                 alpha_max=1e1,
-    #                 snes_atol=1e-6,
-    #                 model_parameter=lmbda,
-    #                 preconditioner="block_cg_bjacobi_star",
-    #                 smoothing_its=5,
-    #                 max_pg_steps=40,
-    #                 pg_rtol=1e-4,
-    #                 refinements=refinements,
-    #                 degree=degree,
-    #                 epsilon=1e-3,
-    #                 save_pvd=False,
-    #             )
-    #             solve_and_append(problem, "results/03_strain_results.csv")
-
-    #             if degree < 2:
-    #                 problem = MTW(
-    #                     n=n,
-    #                     alpha0=1e-2,
-    #                     alpha_max=1e1,
-    #                     snes_atol=1e-6,
-    #                     model_parameter=lmbda,
-    #                     preconditioner="block_cg_bjacobi_star",
-    #                     smoothing_its=5,
-    #                     max_pg_steps=40,
-    #                     pg_rtol=1e-4,
-    #                     refinements=refinements,
-    #                     degree=degree,
-    #                     epsilon=1e-3,
-    #                     save_pvd=False,
-    #                 )
-    #                 solve_and_append(problem, "results/03_strain_results.csv")
-
-                
-    #             if degree > 1:
-    #                 problem = Alfeld(
-    #                     n=n,
-    #                     alpha0=1e-2,
-    #                     alpha_max=1e1,
-    #                     snes_atol=1e-6,
-    #                     model_parameter=lmbda,
-    #                     preconditioner="block_cg_bjacobi_star",
-    #                     smoothing_its=5,
-    #                     max_pg_steps=40,
-    #                     pg_rtol=1e-4,
-    #                     refinements=refinements,
-    #                     degree=degree,
-    #                     epsilon=1e-3,
-    #                     save_pvd=False,
-    #                 )
-    #                 solve_and_append(problem, "results/03_strain_results.csv")
-
-    n = 15
-    refinements = 1
-    for lmbda in [1e2]: #, 1e3, 1e4, 1e5
-        problem = MTW(
-            n=n,
-            alpha0=1e-2,
-            alpha_max=1e1,
-            snes_atol=1e-6,
-            model_parameter=lmbda,
-            preconditioner="block_cg_bjacobi_star",
-            smoothing_its=5,
-            max_pg_steps=40,
-            pg_rtol=1e-4,
-            refinements=refinements,
-            degree=1,
-            epsilon=1e-7,
-            save_pvd=False,
-        )
-        # solve_and_append(problem, "results/03_strain_results.csv")
-        # problem.pg_solve()
-
-        problem = Alfeld(
-            n=n,
-            alpha0=1e-2,
-            alpha_max=1e1,
-            snes_atol=1e-6,
-            model_parameter=lmbda,
-            preconditioner="block_cg_bjacobi_star",
-            smoothing_its=5,
-            max_pg_steps=40,
-            pg_rtol=1e-4,
-            refinements=refinements,
-            degree=2,
-            epsilon=1e-7,
-            save_pvd=True,
-        )
-        # solve_and_append(problem, "results/03_strain_results.csv")
-        # problem.pg_solve()
-
-
-    # for n in [30]:
-    #     for lmbda in [1e2, 1e3, 1e4]:
-    #         problem = OperatorPrecon(
-    #             n=n,
-    #             alpha0=1e-2,
-    #             alpha_max=1e1,
-    #             snes_atol=1e-6,
-    #             model_parameter=lmbda,
-    #             preconditioner="block_cg_bjacobi_star",
-    #             smoothing_its=5,
-    #             max_pg_steps=40,
-    #             pg_rtol=1e-4,
-    #             refinements=refinements,
-    #             degree=1,
-    #             epsilon=1e-3,
-    #             save_pvd=False,
-    #         )
-    #         solve_and_append(problem, "results/03_strain_results.csv")
-
-
+                problem = Slate(
+                    n=n,
+                    alpha0=1e-2,
+                    alpha_max=1e1,
+                    model_parameter=lmbda,
+                    preconditioner="block_cg_bjacobi_gmres_bjacobi",
+                    smoothing_its=smoothing_its,
+                    max_pg_steps=40,
+                    refinements=refinements,
+                    degree=degree,
+                    epsilon=epsilon,
+                    save_pvd=False,
+                    snes_atol=1e-6,
+                    pg_rtol=1e-4,
+                )
+                solve_and_append(problem, "results/03_strain_results.csv")
