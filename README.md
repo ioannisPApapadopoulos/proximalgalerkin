@@ -30,9 +30,11 @@ pip install --no-binary h5py 'firedrake[check,vtk]'
 
 ## proximalgalerkin package
 
+This package is for running the scripts required to generate the Figures and Tables in the manuscript.
+
 ### Installation
 
-The scripts currently only run on the Firedrake branch ```pbrubeck/slate-robust-multigrid```. To switch to this branch, you require a developer install of Firedrake (https://www.firedrakeproject.org/install.html#developer-install).
+The scripts in examples/ currently only run on the Firedrake branch ```pbrubeck/slate-robust-multigrid```. To switch to this branch, you require a developer install of Firedrake (https://www.firedrakeproject.org/install.html#developer-install).
 
 ```
 curl -O https://raw.githubusercontent.com/firedrakeproject/firedrake/release/scripts/firedrake-configure
@@ -52,7 +54,7 @@ pip install -r ./firedrake/requirements-build.txt
 pip install --no-build-isolation --no-binary h5py --editable './firedrake[check,docs,vtk,netgen]'
 ```
 
-Then switch to the current branch and run make.
+Then switch to the correct branch and run make.
 
 ```
 cd firedrake
@@ -71,5 +73,25 @@ cd proximalgalerkin
 pip install .
 ```
 
-
 ### Tables and Figures
+
+Scripts to generate the Tables and Figures found in the manuscript.
+
+|Figure|File: examples/|
+|:-:|:-:|
+|6a,b|[run_obstacle_2d.py](https://github.com/ioannisPApapadopoulos/proximalgalerkin/tree/main/examples/01_obstacle/run_obstacle_2d.py)|
+|6c|[run_obstacle_3d.py](https://github.com/ioannisPApapadopoulos/proximalgalerkin/tree/main/examples/01_obstacle/run_obstacle_3d.py)|
+|7a|[run_signorini_2d.py](https://github.com/ioannisPApapadopoulos/proximalgalerkin/tree/main/examples/02_signorini/run_signorini_2d.py)|
+|7b|[run_signorini_3d.py](https://github.com/ioannisPApapadopoulos/proximalgalerkin/tree/main/examples/02_signorini/run_signorini_3d.py)|
+|8a|[run_strain_2d.py](https://github.com/ioannisPApapadopoulos/proximalgalerkin/tree/main/examples/03_strain/run_strain_2d.py)|
+|8b|[run_strain_3d.py](https://github.com/ioannisPApapadopoulos/proximalgalerkin/tree/main/examples/03_strain/run_strain_3d.py)|
+
+
+|Table|File: examples/|
+|:-:|:-:|
+|2,3|[run_obstacle_2d.py](https://github.com/ioannisPApapadopoulos/proximalgalerkin/tree/main/examples/01_obstacle/run_obstacle_2d.py)|
+|4|[run_obstacle_3d.py](https://github.com/ioannisPApapadopoulos/proximalgalerkin/tree/main/examples/01_obstacle/run_obstacle_3d.py)|
+|5,6|[run_signorini_2d.py](https://github.com/ioannisPApapadopoulos/proximalgalerkin/tree/main/examples/02_signorini/run_signorini_2d.py)|
+|7|[run_signorini_3d.py](https://github.com/ioannisPApapadopoulos/proximalgalerkin/tree/main/examples/02_signorini/run_signorini_3d.py)|
+|8|[run_strain_2d.py](https://github.com/ioannisPApapadopoulos/proximalgalerkin/tree/main/examples/03_strain/run_strain_2d.py)|
+|8|[run_strain_3d.py](https://github.com/ioannisPApapadopoulos/proximalgalerkin/tree/main/examples/03_strain/run_strain_3d.py)|
