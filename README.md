@@ -13,16 +13,19 @@ Further details can be found in the paper 'Preconditioning proximal Galerkin: me
 
 ## Self-contained scripts
 
-In the [self-contained-scripts\](https://github.com/ioannisPApapadopoulos/proximalgalerkin/tree/main/self-contained-scripts) directory we include 3 scripts for the obstacle, Signorini, and strain-constrained elasticity problems, respectively, which are "self-contained". They do not require installation of this package and run on the release branch of Firedrake.
+In the [self-contained-scripts](https://github.com/ioannisPApapadopoulos/proximalgalerkin/tree/main/self-contained-scripts) directory we include 3 scripts for the obstacle, Signorini, and strain-constrained elasticity problems, respectively, which are "self-contained". They do not require installation of this package and run on the release branch of Firedrake.
+
+They implement the block preconditioner where the Schur complement is approximated by a PDE and the
+PDE is inverted by geometric multigrid with Chebyshev relaxation and preconditioned by a Jacobi iteration.
 
 ### Installation
 
-These scripts use Firedrake, Netgen, and VTK.
+These scripts use Firedrake and VTK (to plot the solutions).
 
 Follow the instructions here for installing Firedrake (https://www.firedrakeproject.org/install.html#installing-firedrake). To also install netgen and VTK, please run:
 
 ```
-pip install --no-binary h5py 'firedrake[check,netgen,vtk]'
+pip install --no-binary h5py 'firedrake[check,vtk]'
 ```
 
 ## proximalgalerkin package
