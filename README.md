@@ -9,7 +9,21 @@ The preconditioners can be grouped into two classes: monolithic multigrid with V
 
 We also include self-contained scripts that do not require installation of the ```proximalgalerkin``` package and run on the current Firedrake release branch.
 
-Further details can be found in the paper `Preconditioning proximal Galerkin: mesh, degree, and parameter robust solvers for variational inequalities', I. P. A. Papadopoulos, P. D. Brubeck (2026).
+Further details can be found in the paper 'Preconditioning proximal Galerkin: mesh, degree, and parameter robust solvers for variational inequalities', I. P. A. Papadopoulos, P. D. Brubeck (2026).
+
+## Self-contained scripts
+
+In the [self-contained-scripts\](https://github.com/ioannisPApapadopoulos/proximalgalerkin/tree/main/self-contained-scripts) directory we include 3 scripts for the obstacle, Signorini, and strain-constrained elasticity problems, respectively, which are "self-contained". They do not require installation of this package and run on the release branch of Firedrake.
+
+### Installation
+
+These scripts use Firedrake, Netgen, and VTK.
+
+Follow the instructions here for installing Firedrake (https://www.firedrakeproject.org/install.html#installing-firedrake). To also install netgen and VTK, please run:
+
+```
+pip install --no-binary h5py 'firedrake[check,netgen,vtk]'
+```
 
 ## proximalgalerkin package
 
