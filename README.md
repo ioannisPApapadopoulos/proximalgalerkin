@@ -7,9 +7,11 @@ This repository contains a package that implements preconditioners for the proxi
 
 The preconditioners can be grouped into two classes: monolithic multigrid with Vanka-type relaxation and a block preconditioning approach with preconditioned CG for the ''top-left'' block and geometric multigrid for an approximation of the Schur complement.
 
-We also include self-contained scripts that do not require installation of the ```proximalgalerkin``` package and run on the current Firedrake release branch.
+The scripts in [examples](https://github.com/ioannisPApapadopoulos/proximalgalerkin/tree/main/examples) folder require an installation of the ```proximalgalerkin``` package.
 
-Further details can be found in the paper 'Preconditioning proximal Galerkin: mesh, degree, and parameter robust solvers for variational inequalities', I. P. A. Papadopoulos, P. D. Brubeck (2026).
+We also include [self-contained scripts](https://github.com/ioannisPApapadopoulos/proximalgalerkin/tree/main/self-contained-scripts) that do not require installation of the ```proximalgalerkin``` package and run on the current Firedrake release branch.
+
+Further details about the preconditioners can be found in the paper 'Preconditioning proximal Galerkin: mesh, degree, and parameter robust solvers for variational inequalities', I. P. A. Papadopoulos, P. D. Brubeck (2026).
 
 ## Self-contained scripts
 
