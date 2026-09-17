@@ -15,13 +15,44 @@ Further details can be found in the paper `Preconditioning proximal Galerkin: me
 
 ### Installation
 
-The scripts currently only run on the Firedrake branch ```pbrubeck/slate-robust-multigrid```. To switch to this branch, you require a developer install of Firedrake.
+The scripts currently only run on the Firedrake branch ```pbrubeck/slate-robust-multigrid```. To switch to this branch, you require a developer install of Firedrake (https://www.firedrakeproject.org/install.html#developer-install).
 
+```
+curl -O https://raw.githubusercontent.com/firedrakeproject/firedrake/release/scripts/firedrake-configure
+git clone https://gitlab.com/petsc/petsc.git
+cd petsc
+python3 ../firedrake-configure --show-petsc-configure-options | xargs -L1 ./configure
+make PETSC_DIR=/path/to/petsc PETSC_ARCH=arch-firedrake-default all
+make check
+cd ..
+git clone git@github.com:firedrakeproject/firedrake.git --branch main
+export $(python3 firedrake-configure --show-env)
+python3 -m venv venv-firedrake
+. venv-firedrake/bin/activate
+pip cache purge
+pip install $PETSC_DIR/src/binding/petsc4py
+pip install -r ./firedrake/requirements-build.txt
+pip install --no-build-isolation --no-binary h5py --editable './firedrake[check,docs,vtk,netgen]'
+```
 
 Then switch to the current branch and run make.
 
+```
+cd firedrake
+git fetch
+git checkout pbrubeck/slate-robust-multigrid
+make
+cd ..
+```
 
-Finally, you can install the ```proximalgalerkin``` package.
+
+Finally, you clone the ```proximalgalerkin``` package and pip install.
+
+```
+git clone git@github.com:ioannisPApapadopoulos/proximalgalerkin.git
+cd proximalgalerkin
+pip install .
+```
 
 
 ### Tables and Figures
