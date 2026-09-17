@@ -4,9 +4,9 @@ from firedrake import *
 This script implements a block preconditioner for the Newton linear systems of proximal Galerkin applied 
 to a strain-constrained elasticity problem.
 
-Let Ω be the a rectangle . The Signorini problem implemented here seeks to minimize
-   ∫_Ω μ |symgrad u|^2 + λ |div u|^2/2  dx
-subject to |symgrad u|(x) <= 0.4 almost everywhere at y = 0 where the right-most edge is compressed 0.1 to the left and the
+Let Ω be the the rectangle (0, 1)x(0, 0.1). The strain-constrained elasticity problem implemented here seeks to minimize
+   ∫_Ω μ |symgrad u|^2 + λ |div u|^2/2 - f u dx
+subject to |symgrad u|(x) <= 0.4 almost everywhere. The right-most edge is compressed 0.2 to the left and the
 left-most edge is fixed in place.
 
 We invert each Jacobian by applying an outer FGMRES method. We then construct a preconditioner by approximating the inverse of the
