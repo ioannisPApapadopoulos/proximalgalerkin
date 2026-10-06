@@ -1,8 +1,6 @@
 from firedrake import *
 from proximalgalerkin import *
 
-
-
 class StrainProblem(ProximalGalerkin):
 
     def mesh(self):
@@ -44,20 +42,13 @@ class StrainProblem(ProximalGalerkin):
         self.mu = mu
 
         degree = self.degree
-        self.scale = Constant(1e2)
+        self.scale = Constant(5e3)
 
         F = inner(alpha*self.sigma(u), self.symgrad(v))*dx
         F -= inner(alpha*f, v)*dx
         F += inner(psi-psi_old, self.symgrad(v))*dx
         F += self.scale*inner(self.symgrad(u)-self.R(phi,psi), q)*dx(degree=0)
         return F
-
-    def jacobian(self, z, z_test, z_trial):
-        eps = Constant(self.epsilon)
-        _, psi_trial = split(z_trial)
-        _, q = split(z_test)
-        J = derivative(self.residual(z), z, z_trial) #- inner(self.scale*eps*psi_trial, q)*dx
-        return J
 
     def boundary_conditions(self, Z):
         return [DirichletBC(Z.sub(0), 0, [1]),
@@ -97,7 +88,7 @@ class OperatorPrecon(StrainProblem):
         J = self.jacobian(z, z_test, z_trial)
         eps = Constant(self.epsilon)
         J = derivative(self.residual(z), z, z_trial)
-        Jp = J + self.inverse_dR(psi,self.phi,eps,self.symgrad(u_trial),self.symgrad(v))*dx(degree=2*self.degree) - inner(self.scale*eps*psi_trial, q)*dx
+        Jp = J + self.inverse_dR(psi,self.phi,eps,self.symgrad(u_trial),self.symgrad(v))*dx(degree=0) - inner(self.scale*eps*psi_trial, q)*dx
         return Jp
 
 class Slate(StrainProblem):
@@ -159,8 +150,6 @@ class Slate(StrainProblem):
                 "mg_levels_ksp_type": "gmres",
                 "mg_levels_ksp_max_it": self.smoothing_its,
                 "mg_levels_pc_type": "bjacobi",
-                # "mg_levels_pc_type": "python",
-                # "mg_levels_pc_python_type": "firedrake.ASMStarPC",
             },
             "fieldsplit_0": {
                 "ksp_type": "cg",
@@ -170,64 +159,3 @@ class Slate(StrainProblem):
             },
         }
         return sp
-
-if __name__ == "__main__":
-
-    problem = OperatorPrecon(
-        n=10,
-        alpha0=1e-2,
-        alpha_max=1e1,
-        model_parameter=1e2,
-        preconditioner="block_cg_bjacobi_gmres_bjacobi",
-        smoothing_its=5,
-        max_pg_steps=40,
-        refinements=1,
-        degree=1,
-        epsilon=1e-3,
-        save_pvd=True,
-        snes_atol=1e-6,
-        pg_rtol=1e-4,
-    )
-    problem.pg_solve()
-
-    # epsilon=1e-3
-    # lmbda = 1e2
-    # smoothing_its=5
-    # for n in [10]:
-    #     for refinements in [1,2]:
-    #         for degree in [1]:
-
-    #             problem = OperatorPrecon(
-    #                 n=n,
-    #                 alpha0=1e-2,
-    #                 alpha_max=1e1,
-    #                 model_parameter=lmbda,
-    #                 preconditioner="block_cg_bjacobi_gmres_bjacobi",
-    #                 smoothing_its=smoothing_its,
-    #                 max_pg_steps=40,
-    #                 refinements=refinements,
-    #                 degree=degree,
-    #                 epsilon=epsilon,
-    #                 save_pvd=False,
-    #                 snes_atol=1e-6,
-    #                 pg_rtol=1e-4,
-    #             )
-    #             solve_and_append(problem, "results/03_strain_3d_results.csv")
-    #             #problem.pg_solve()
-
-    #             problem = Slate(
-    #                 n=n,
-    #                 alpha0=1e-2,
-    #                 alpha_max=1e1,
-    #                 model_parameter=lmbda,
-    #                 preconditioner="block_cg_bjacobi_gmres_bjacobi",
-    #                 smoothing_its=smoothing_its,
-    #                 max_pg_steps=40,
-    #                 refinements=refinements,
-    #                 degree=degree,
-    #                 epsilon=epsilon,
-    #                 save_pvd=False,
-    #                 snes_atol=1e-6,
-    #                 pg_rtol=1e-4,
-    #             )
-    #             solve_and_append(problem, "results/03_strain_3d_results.csv")
