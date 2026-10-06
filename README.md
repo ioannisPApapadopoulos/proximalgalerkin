@@ -1,11 +1,12 @@
 # Preconditioning Proximal Galerkin
 
 This repository contains a package that implements preconditioners for the proximal Galerkin algorithm applied to solving variational inequalities. In particular
-    - obstacle problem
-    - Signorini problem
-    - Strain-constrained elasticity problem
 
-The preconditioners can be grouped into two classes: monolithic multigrid with Vanka-type relaxation and a block preconditioning approach with preconditioned CG for the ''top-left'' block and geometric multigrid for an approximation of the Schur complement.
+- obstacle problems
+- Signorini problems
+- Strain-constrained elasticity problems
+
+The main preconditioner is a block preconditioning approach with respect to the latent block. We use preconditioned CG for the latent block and geometric multigrid for an approximation of the Schur complement. This package also supports monolithic multigrid with Vanka-type relaxation.
 
 The scripts in [examples](https://github.com/ioannisPApapadopoulos/proximalgalerkin/tree/main/examples) folder require an installation of the ```proximalgalerkin``` package.
 
