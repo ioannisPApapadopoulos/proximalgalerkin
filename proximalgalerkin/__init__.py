@@ -1,4 +1,4 @@
-__version__ = "2026.0.1"
+__version__ = "2026.10.1"
 
 from .logging import *
 from .problemclass import *
