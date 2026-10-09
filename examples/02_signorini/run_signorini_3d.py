@@ -2,7 +2,7 @@ from firedrake import *
 from signorini_3d import *
 
 n = 5
-for refinements in [1,2]:
+for refinements in [2]:
     for lmbda in [1e1, 1e2, 1e3, 1e4, 1e5]:
         problem = MTW(
             n=n,
@@ -11,7 +11,7 @@ for refinements in [1,2]:
             snes_atol=1e-5,
             model_parameter=lmbda,
             preconditioner="block_cg_bjacobi_cg_star",
-            smoothing_its=8,
+            smoothing_its=5,
             max_pg_steps=40,
             pg_rtol=1e-3,
             refinements=refinements,
@@ -28,7 +28,7 @@ for refinements in [1,2]:
             snes_atol=1e-5,
             model_parameter=lmbda,
             preconditioner="block_cg_bjacobi_cg_star",
-            smoothing_its=8,
+            smoothing_its=5,
             max_pg_steps=40,
             pg_rtol=1e-3,
             refinements=refinements,
@@ -48,7 +48,7 @@ for refinements in [2]:
             snes_atol=1e-5,
             model_parameter=lmbda,
             preconditioner="block_cg_bjacobi_cg_star",
-            smoothing_its=8,
+            smoothing_its=5,
             max_pg_steps=40,
             pg_rtol=1e-3,
             refinements=refinements,
