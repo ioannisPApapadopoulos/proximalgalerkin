@@ -6,7 +6,7 @@ This repository contains a package that implements preconditioners for the proxi
 - Signorini problems
 - Strain-constrained elasticity problems
 
-The main preconditioner is a block preconditioning approach via an elimination of the primal variable. We use preconditioned CG for the latent block and geometric multigrid for an approximation of the Schur complement. This Schur approximation is constructed either via a discretization of a specific PDE or algebraically via Slate. This package also supports monolithic multigrid with Vanka-type relaxation.
+The main preconditioner is a block preconditioning approach that constructs the primal Schur complement. We use preconditioned CG for the latent block and geometric multigrid for an approximation of the Schur complement. This Schur approximation is constructed either via a discretization of a specific PDE or algebraically via Slate. This package also supports monolithic multigrid with Vanka-type relaxation.
 
 The scripts in [examples](https://github.com/ioannisPApapadopoulos/proximalgalerkin/tree/main/examples) folder require an installation of the ```proximalgalerkin``` package.
 
